@@ -1,21 +1,38 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
+
+type Theme = "light" | "dark";
+const themeEvent = "stk-theme-change";
+
+function themeSnapshot(): Theme {
+  if (typeof window === "undefined") return "light";
+
+  return (localStorage.getItem("theme") as Theme | null) ?? "light";
+}
+
+function subscribeToTheme(callback: () => void) {
+  window.addEventListener("storage", callback);
+  window.addEventListener(themeEvent, callback);
+
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener(themeEvent, callback);
+  };
+}
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const theme = useSyncExternalStore(subscribeToTheme, themeSnapshot, () => "light");
 
   useEffect(() => {
-    const saved = (localStorage.getItem("theme") as "light" | "dark" | null) ?? "light";
-    setTheme(saved);
-    document.documentElement.setAttribute("data-theme", saved);
-  }, []);
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
 
   const toggle = () => {
     const next = theme === "light" ? "dark" : "light";
-    setTheme(next);
     document.documentElement.setAttribute("data-theme", next);
     localStorage.setItem("theme", next);
+    window.dispatchEvent(new Event(themeEvent));
   };
 
   return (

@@ -19,6 +19,10 @@ type Props = {
   required?: boolean;
   searchable?: boolean;
   emptyText?: string;
+  invalid?: boolean;
+  describedBy?: string;
+  validationKey?: string;
+  label?: string;
 };
 
 export function Listbox({
@@ -30,6 +34,10 @@ export function Listbox({
   required,
   searchable = true,
   emptyText = "No matches.",
+  invalid,
+  describedBy,
+  validationKey,
+  label,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -43,6 +51,7 @@ export function Listbox({
   useEffect(() => {
     if (validationRef.current && validationRef.current.value !== value) {
       validationRef.current.value = value;
+      validationRef.current.dispatchEvent(new Event("input", { bubbles: true }));
     }
   }, [value]);
 
@@ -70,10 +79,6 @@ export function Listbox({
     if (open && searchable) {
       requestAnimationFrame(() => inputRef.current?.focus());
     }
-    if (open) {
-      const idx = filtered.findIndex((o) => o.value === value);
-      setActiveIdx(idx >= 0 ? idx : 0);
-    }
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const commit = (v: string) => {
@@ -82,10 +87,16 @@ export function Listbox({
     setQuery("");
   };
 
+  const openList = () => {
+    const idx = filtered.findIndex((o) => o.value === value);
+    setActiveIdx(idx >= 0 ? idx : 0);
+    setOpen(true);
+  };
+
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (!open && (e.key === "Enter" || e.key === " " || e.key === "ArrowDown")) {
       e.preventDefault();
-      setOpen(true);
+      openList();
       return;
     }
     if (!open) return;
@@ -115,18 +126,23 @@ export function Listbox({
         name={name}
         defaultValue={value}
         required={required}
+        aria-invalid={invalid ? true : undefined}
+        aria-describedby={describedBy}
+        data-field-key={validationKey}
+        data-label={label}
         onChange={() => { /* updated imperatively */ }}
-        onFocus={() => setOpen(true)}
+        onFocus={openList}
         tabIndex={-1}
         aria-hidden
       />
       <button
         type="button"
         className="lb-trigger"
+        data-invalid={invalid ? 1 : 0}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={listId}
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => (open ? setOpen(false) : openList())}
       >
         <span className="lb-value">
           {selected ? (

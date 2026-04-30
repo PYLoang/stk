@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Listbox } from "@/components/ui/listbox";
+import { useClientValidation } from "./use-client-validation";
 
 type StockFormProps = {
   action: (formData: FormData) => Promise<void>;
@@ -18,14 +19,23 @@ type StockFormProps = {
 
 export function StockForm({ action, categories, stock }: StockFormProps) {
   const [categoryId, setCategoryId] = useState(stock?.categoryId ?? "");
+  const { errors, formProps, fieldProps, error } = useClientValidation();
 
   const categoryOptions = categories.map((c) => ({ value: c.id, label: c.name }));
 
   return (
-    <form action={action} className="col gap-24" style={{ maxWidth: 640 }}>
+    <form {...formProps} action={action} className="col gap-24" style={{ maxWidth: 640 }}>
       <div>
         <div className="field-lbl">Name <span className="req">*</span></div>
-        <input name="name" required defaultValue={stock?.name} className="input" placeholder="e.g. Vanilla flour" />
+        <input
+          name="name"
+          required
+          defaultValue={stock?.name}
+          className="input"
+          placeholder="e.g. Vanilla flour"
+          {...fieldProps("name", "Name")}
+        />
+        {error("name")}
       </div>
 
       <div className="row gap-24" style={{ alignItems: "flex-start" }}>
@@ -38,7 +48,9 @@ export function StockForm({ action, categories, stock }: StockFormProps) {
             required
             defaultValue={stock?.quantity ?? 0}
             className="input mono"
+            {...fieldProps("quantity", "Quantity")}
           />
+          {error("quantity")}
         </div>
         <div style={{ flex: 1 }}>
           <div className="field-lbl">Unit <span className="req">*</span></div>
@@ -47,8 +59,10 @@ export function StockForm({ action, categories, stock }: StockFormProps) {
             required
             defaultValue={stock?.unit ?? "pc"}
             className="input mono"
+            {...fieldProps("unit", "Unit")}
             placeholder="pc, kg, tray…"
           />
+          {error("unit")}
         </div>
       </div>
 
@@ -64,7 +78,9 @@ export function StockForm({ action, categories, stock }: StockFormProps) {
             defaultValue={stock?.price ? String(stock.price) : ""}
             className="input mono"
             placeholder="0.00"
+            {...fieldProps("price", "Unit price")}
           />
+          {error("price")}
         </div>
         <div style={{ flex: 1 }}>
           <div className="field-lbl">Reorder at</div>
@@ -75,7 +91,9 @@ export function StockForm({ action, categories, stock }: StockFormProps) {
             defaultValue={stock?.lowAt ?? ""}
             placeholder="0"
             className="input mono"
+            {...fieldProps("lowAt", "Reorder at")}
           />
+          {error("lowAt")}
           <div className="field-help">Show low-stock warning when qty ≤ this number. Leave blank for 0.</div>
         </div>
       </div>
@@ -89,7 +107,12 @@ export function StockForm({ action, categories, stock }: StockFormProps) {
           options={categoryOptions}
           placeholder="Select category"
           required
+          invalid={Boolean(errors.categoryId)}
+          describedBy={errors.categoryId ? "categoryId-error" : undefined}
+          validationKey="categoryId"
+          label="Category"
         />
+        {error("categoryId")}
       </div>
 
       <div className="row gap-8 mt-8">

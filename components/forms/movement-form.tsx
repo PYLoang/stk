@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Segmented } from "@/components/ui/segmented";
 import { Listbox } from "@/components/ui/listbox";
+import { useClientValidation } from "./use-client-validation";
 
 type Stock = { id: string; name: string; quantity: number; unit?: string };
 
@@ -18,6 +19,7 @@ export function MovementForm({ action, stocks, presetItems, presetType }: Props)
 
   const [type, setType] = useState<"IMPORT" | "EXPORT">(presetType ?? "IMPORT");
   const [rows, setRows] = useState<string[]>(initial);
+  const { errors, formProps, fieldProps, error } = useClientValidation();
 
   const setRow = (i: number, v: string) => {
     setRows((prev) => prev.map((x, j) => (j === i ? v : x)));
@@ -36,7 +38,7 @@ export function MovementForm({ action, stocks, presetItems, presetType }: Props)
   const usedIds = new Set(rows.filter(Boolean));
 
   return (
-    <form action={action} className="col gap-24" style={{ maxWidth: 880 }}>
+    <form {...formProps} action={action} className="col gap-24" style={{ maxWidth: 880 }}>
       <div>
         <div className="field-lbl">Type <span className="req">*</span></div>
         <Segmented
@@ -65,7 +67,7 @@ export function MovementForm({ action, stocks, presetItems, presetType }: Props)
               hint: o.value !== stockId && usedIds.has(o.value) ? "Already added" : undefined,
             }));
             return (
-              <div key={row} className="row gap-16">
+              <div key={row} className="row gap-16" style={{ alignItems: "flex-start" }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <Listbox
                     name="stockId"
@@ -74,19 +76,27 @@ export function MovementForm({ action, stocks, presetItems, presetType }: Props)
                     options={options}
                     placeholder="Select stock"
                     required={row === 0 && !rows.some(Boolean)}
+                    invalid={Boolean(errors[`stockId-${row}`])}
+                    describedBy={errors[`stockId-${row}`] ? `stockId-${row}-error` : undefined}
+                    validationKey={`stockId-${row}`}
+                    label="Stock"
                   />
+                  {error(`stockId-${row}`)}
                 </div>
                 <div className="row gap-8" style={{ width: 160 }}>
-                  <input
-                    name="quantity"
-                    type="number"
-                    min="1"
-                    defaultValue={stockId ? 1 : ""}
-                    placeholder="Qty"
-                    className="input mono"
-                    style={{ flex: 1 }}
-                    required={!!stockId}
-                  />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <input
+                      name="quantity"
+                      type="number"
+                      min="1"
+                      defaultValue={stockId ? 1 : ""}
+                      placeholder="Qty"
+                      className="input mono"
+                      required={!!stockId}
+                      {...fieldProps(`quantity-${row}`, "Quantity")}
+                    />
+                    {error(`quantity-${row}`)}
+                  </div>
                   <span className="mono muted" style={{ fontSize: 12, minWidth: 28 }}>
                     {unitOf(stockId) || "—"}
                   </span>
@@ -110,7 +120,8 @@ export function MovementForm({ action, stocks, presetItems, presetType }: Props)
 
       <div>
         <div className="field-lbl">Remark</div>
-        <textarea name="remark" rows={3} className="textarea" placeholder="Optional notes" />
+        <textarea name="remark" rows={3} className="textarea" placeholder="Optional notes" {...fieldProps("remark", "Remark")} />
+        {error("remark")}
       </div>
 
       <div className="row gap-8 mt-8">

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Segmented } from "@/components/ui/segmented";
 import { Listbox } from "@/components/ui/listbox";
+import { useClientValidation } from "./use-client-validation";
 
 type TxnFormProps = {
   action: (formData: FormData) => Promise<void>;
@@ -13,6 +14,7 @@ export function TxnForm({ action, stocks }: TxnFormProps) {
   const [mode, setMode] = useState<"stock" | "subject">("stock");
   const [type, setType] = useState<"IMPORT" | "EXPORT">("IMPORT");
   const [stockId, setStockId] = useState("");
+  const { errors, formProps, fieldProps, error } = useClientValidation();
 
   const stockOptions = stocks.map((s) => ({
     value: s.id,
@@ -21,7 +23,7 @@ export function TxnForm({ action, stocks }: TxnFormProps) {
   }));
 
   return (
-    <form action={action} className="col gap-24" style={{ maxWidth: 720 }}>
+    <form {...formProps} action={action} className="col gap-24" style={{ maxWidth: 720 }}>
       <div className="row gap-24">
         <div style={{ flex: 1 }}>
           <div className="field-lbl">Mode <span className="req">*</span></div>
@@ -60,7 +62,12 @@ export function TxnForm({ action, stocks }: TxnFormProps) {
             placeholder="Select stock"
             required
             searchable
+            invalid={Boolean(errors.stockId)}
+            describedBy={errors.stockId ? "stockId-error" : undefined}
+            validationKey="stockId"
+            label="Stock"
           />
+          {error("stockId")}
           <div className="field-help">Quantity will adjust this stock on submit.</div>
         </div>
       ) : (
@@ -71,15 +78,26 @@ export function TxnForm({ action, stocks }: TxnFormProps) {
             required
             placeholder="e.g. Equipment rental, Utility bill…"
             className="input"
+            {...fieldProps("subject", "Subject")}
           />
-          <div className="field-help">Free-form transactions don't touch any stock balance.</div>
+          {error("subject")}
+          <div className="field-help">Free-form transactions don&apos;t touch any stock balance.</div>
         </div>
       )}
 
       <div className="row gap-24">
         <div style={{ flex: 1 }}>
           <div className="field-lbl">Quantity <span className="req">*</span></div>
-          <input name="quantity" type="number" min="1" required defaultValue="1" className="input mono" />
+          <input
+            name="quantity"
+            type="number"
+            min="1"
+            required
+            defaultValue="1"
+            className="input mono"
+            {...fieldProps("quantity", "Quantity")}
+          />
+          {error("quantity")}
         </div>
         <div style={{ flex: 1 }}>
           <div className="field-lbl">Unit price <span className="req">*</span></div>
@@ -91,13 +109,16 @@ export function TxnForm({ action, stocks }: TxnFormProps) {
             required
             className="input mono"
             placeholder="0.00"
+            {...fieldProps("price", "Unit price")}
           />
+          {error("price")}
         </div>
       </div>
 
       <div>
         <div className="field-lbl">Remark</div>
-        <textarea name="remark" rows={3} className="textarea" />
+        <textarea name="remark" rows={3} className="textarea" {...fieldProps("remark", "Remark")} />
+        {error("remark")}
       </div>
 
       <div className="row gap-8 mt-8">

@@ -79,7 +79,7 @@ export default async function Home() {
           </div>
         </div>
         <div className="stat">
-          <div className="stat-lbl">Today's flow</div>
+          <div className="stat-lbl">Today&apos;s flow</div>
           <div className="stat-val">
             {todayImports}
             <span style={{ color: "var(--ink-4)", fontSize: 22 }}> in </span>
