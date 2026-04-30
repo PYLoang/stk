@@ -3,23 +3,43 @@
 import { useState } from "react";
 import { Segmented } from "@/components/ui/segmented";
 import { Listbox } from "@/components/ui/listbox";
+import { stockQty } from "@/lib/format";
 import { useClientValidation } from "./use-client-validation";
 
 type TxnFormProps = {
   action: (formData: FormData) => Promise<void>;
-  stocks: Array<{ id: string; name: string; quantity: number; price: unknown }>;
+  stocks: Array<{ id: string; name: string; quantity: number; price: unknown; unit?: string | null }>;
 };
 
 export function TxnForm({ action, stocks }: TxnFormProps) {
   const [mode, setMode] = useState<"stock" | "subject">("stock");
   const [type, setType] = useState<"IMPORT" | "EXPORT">("IMPORT");
   const [stockId, setStockId] = useState("");
+  const [subject, setSubject] = useState("");
+  const [price, setPrice] = useState("");
   const { errors, formProps, fieldProps, error } = useClientValidation();
+
+  const priceOf = (id: string) => {
+    const stock = stocks.find((s) => s.id === id);
+    return stock ? Number(stock.price).toFixed(2) : "";
+  };
+
+  const changeMode = (value: string) => {
+    setMode(value as "stock" | "subject");
+    setStockId("");
+    setSubject("");
+    setPrice("");
+  };
+
+  const changeStock = (value: string) => {
+    setStockId(value);
+    setPrice(priceOf(value));
+  };
 
   const stockOptions = stocks.map((s) => ({
     value: s.id,
     label: s.name,
-    meta: `${s.quantity} avail`,
+    meta: stockQty(s.quantity, s.unit),
   }));
 
   return (
@@ -30,7 +50,7 @@ export function TxnForm({ action, stocks }: TxnFormProps) {
           <Segmented
             name="mode"
             value={mode}
-            onChange={(v) => setMode(v as "stock" | "subject")}
+            onChange={changeMode}
             options={[
               { value: "stock", label: "Existing stock" },
               { value: "subject", label: "Free-form subject" },
@@ -57,7 +77,7 @@ export function TxnForm({ action, stocks }: TxnFormProps) {
           <Listbox
             name="stockId"
             value={stockId}
-            onChange={setStockId}
+            onChange={changeStock}
             options={stockOptions}
             placeholder="Select stock"
             required
@@ -76,6 +96,8 @@ export function TxnForm({ action, stocks }: TxnFormProps) {
           <input
             name="subject"
             required
+            value={subject}
+            onChange={(event) => setSubject(event.target.value)}
             placeholder="e.g. Equipment rental, Utility bill…"
             className="input"
             {...fieldProps("subject", "Subject")}
@@ -107,6 +129,9 @@ export function TxnForm({ action, stocks }: TxnFormProps) {
             min="0.01"
             step="0.01"
             required
+            readOnly={mode === "stock"}
+            value={price}
+            onChange={(event) => setPrice(event.target.value)}
             className="input mono"
             placeholder="0.00"
             {...fieldProps("price", "Unit price")}

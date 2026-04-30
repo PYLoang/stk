@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { stockQty } from "@/lib/format";
 import { txnSchema } from "@/lib/validations/txn";
 
 function parseTxnForm(formData: FormData) {
@@ -32,11 +33,11 @@ export async function createTxn(formData: FormData) {
     if (data.stockId) {
       const stock = await tx.stock.findUniqueOrThrow({
         where: { id: data.stockId },
-        select: { quantity: true, name: true },
+        select: { quantity: true, name: true, unit: true },
       });
 
       if (data.type === "EXPORT" && stock.quantity < data.quantity) {
-        throw new Error(`${stock.name} only has ${stock.quantity} available.`);
+        throw new Error(`${stock.name} only has ${stockQty(stock.quantity, stock.unit)} available.`);
       }
 
       await tx.stock.update({
@@ -59,9 +60,6 @@ export async function createTxn(formData: FormData) {
 }
 
 export async function deleteTxn(formData: FormData) {
-  const id = String(formData.get("id") ?? "");
-  if (!id) return;
-
-  await prisma.txn.delete({ where: { id } });
-  revalidatePath("/transactions");
+  void formData;
+  throw new Error("Transactions cannot be deleted.");
 }

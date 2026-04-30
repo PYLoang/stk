@@ -9,6 +9,10 @@ export function num(value: number | string) {
   return Number(value).toLocaleString("en-US");
 }
 
+export function stockQty(value: number | string, unit?: string | null) {
+  return `${num(value)}${unit ? ` ${unit}` : ""}`;
+}
+
 export function fmtDate(value: Date) {
   const d = value.getDate().toString().padStart(2, "0");
   const m = (value.getMonth() + 1).toString().padStart(2, "0");

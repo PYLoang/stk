@@ -56,15 +56,20 @@ export function useClientValidation() {
     const key = fieldKey(el);
 
     setErrors((current) => {
-      const next = { ...current };
-
       if (el.validity.valid) {
+        if (!current[key]) return current;
+        const next = { ...current };
         delete next[key];
-      } else if (current[key]) {
-        next[key] = messageFor(el);
+        return next;
       }
 
-      return next;
+      if (current[key]) {
+        const message = messageFor(el);
+        if (current[key] === message) return current;
+        return { ...current, [key]: message };
+      }
+
+      return current;
     });
   }, []);
 

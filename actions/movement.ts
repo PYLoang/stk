@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { stockQty } from "@/lib/format";
 import { movementSchema } from "@/lib/validations/movement";
 
 function parseMovementForm(formData: FormData) {
@@ -50,11 +51,11 @@ export async function createMovement(formData: FormData) {
     for (const item of data.items) {
       const stock = await tx.stock.findUniqueOrThrow({
         where: { id: item.stockId },
-        select: { quantity: true, name: true },
+        select: { quantity: true, name: true, unit: true },
       });
 
       if (data.type === "EXPORT" && stock.quantity < item.quantity) {
-        throw new Error(`${stock.name} only has ${stock.quantity} available.`);
+        throw new Error(`${stock.name} only has ${stockQty(stock.quantity, stock.unit)} available.`);
       }
     }
 

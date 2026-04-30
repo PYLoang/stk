@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { Sheet } from "./sheet";
-import { deleteTxn } from "@/actions/txn";
 import { fmtDateTime, money } from "@/lib/format";
 
 type Txn = {
@@ -133,7 +132,6 @@ export function TransactionsList({ txns, newSheet }: Props) {
                 <th className="right" onClick={() => toggleSort("price")} style={{ cursor: "pointer" }}>Unit price{sortArr("price")}</th>
                 <th className="right" onClick={() => toggleSort("value")} style={{ cursor: "pointer" }}>Value{sortArr("value")}</th>
                 <th className="nowrap" onClick={() => toggleSort("createdAt")} style={{ cursor: "pointer" }}>Posted{sortArr("createdAt")}</th>
-                <th className="right" style={{ width: 100 }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -155,21 +153,6 @@ export function TransactionsList({ txns, newSheet }: Props) {
                     <td className="right num">{money(t.price)}</td>
                     <td className="right num" style={{ fontWeight: 500 }}>{money(t.quantity * t.price)}</td>
                     <td className="num muted nowrap">{fmtDateTime(created)}</td>
-                    <td className="right">
-                      <div className="row-actions">
-                        <form action={deleteTxn}>
-                          <input type="hidden" name="id" value={t.id} />
-                          <button
-                            className="btn btn--danger btn--icon"
-                            type="submit"
-                            aria-label="Delete"
-                            title="Delete"
-                          >
-                            <i className="fa-regular fa-trash-can" />
-                          </button>
-                        </form>
-                      </div>
-                    </td>
                   </tr>
                 );
               })}

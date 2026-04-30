@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Segmented } from "@/components/ui/segmented";
 import { Listbox } from "@/components/ui/listbox";
+import { stockQty } from "@/lib/format";
 import { useClientValidation } from "./use-client-validation";
 
 type Stock = { id: string; name: string; quantity: number; unit?: string };
@@ -30,7 +31,7 @@ export function MovementForm({ action, stocks, presetItems, presetType }: Props)
   const stockOptions = stocks.map((s) => ({
     value: s.id,
     label: s.name,
-    meta: `${s.quantity}${s.unit ? " " + s.unit : ""} avail`,
+    meta: stockQty(s.quantity, s.unit),
   }));
 
   const usedIds = new Set(rows.filter(Boolean));
