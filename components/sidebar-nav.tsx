@@ -3,31 +3,28 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-type Counts = { stocks: number; categories: number; movements: number; transactions: number };
-
-const items: { href: string; num: string; label: string; key: keyof Counts }[] = [
-  { href: "/", num: "01", label: "Dashboard", key: "stocks" },
-  { href: "/stocks", num: "02", label: "Stocks", key: "stocks" },
-  { href: "/categories", num: "03", label: "Categories", key: "categories" },
-  { href: "/movements", num: "04", label: "Movements", key: "movements" },
-  { href: "/transactions", num: "05", label: "Transactions", key: "transactions" },
+const items: { href: string; icon: string; label: string }[] = [
+  { href: "/", icon: "fa-solid fa-gauge-high", label: "Dashboard" },
+  { href: "/stocks", icon: "fa-solid fa-boxes-stacked", label: "Stocks" },
+  { href: "/categories", icon: "fa-solid fa-tags", label: "Categories" },
+  { href: "/movements", icon: "fa-solid fa-arrow-right-arrow-left", label: "Movements" },
+  { href: "/transactions", icon: "fa-solid fa-receipt", label: "Transactions" },
 ];
 
-export function SidebarNav({ counts }: { counts: Counts }) {
+export function SidebarNav() {
   const path = usePathname();
-  const isActive = (href: string) => (href === "/" ? path === "/" : path === href || path.startsWith(href + "/"));
+  const isActive = (href: string) =>
+    href === "/" ? path === "/" : path === href || path.startsWith(href + "/");
 
   return (
     <nav className="nav-group" style={{ flex: 1 }}>
       <div className="nav-group-h">Workspace</div>
       {items.map((it) => {
         const active = isActive(it.href);
-        const showCount = it.href !== "/";
         return (
           <Link key={it.href} href={it.href} className="nav-item" data-active={active ? 1 : 0}>
-            <span className="nav-num">{it.num}</span>
+            <i className={`nav-icon ${it.icon}`} aria-hidden />
             <span>{it.label}</span>
-            {showCount && <span className="nav-cnt">{String(counts[it.key]).padStart(2, "0")}</span>}
           </Link>
         );
       })}

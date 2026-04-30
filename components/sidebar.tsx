@@ -1,27 +1,19 @@
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
 import { SidebarNav } from "./sidebar-nav";
 import { ThemeToggle } from "./theme-toggle";
 
-export async function Sidebar() {
-  const [stocks, categories, movements, transactions] = await Promise.all([
-    prisma.stock.count(),
-    prisma.category.count(),
-    prisma.movement.count(),
-    prisma.txn.count(),
-  ]);
-
+export function Sidebar() {
   return (
     <aside className="sidebar">
       <Link href="/" className="brand">
         <span className="brand-mark" aria-hidden />
         <span className="col" style={{ gap: 2 }}>
-          <span className="brand-name">Marbled</span>
+          <span className="brand-name">STK</span>
           <span className="brand-sub">Stock System</span>
         </span>
       </Link>
 
-      <SidebarNav counts={{ stocks, categories, movements, transactions }} />
+      <SidebarNav />
 
       <SidebarFoot />
     </aside>

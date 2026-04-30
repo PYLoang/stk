@@ -4,7 +4,7 @@ import { Topbar } from "@/components/topbar";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Marbled — Stock System",
+  title: "STK — Stock System",
   description: "Refined stock & inventory tracking.",
 };
 

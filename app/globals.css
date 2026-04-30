@@ -164,6 +164,13 @@ button { font-family: inherit; font-size: inherit; }
   color: var(--ink-4);
   width: 18px;
 }
+.nav-icon {
+  font-size: 13px;
+  color: var(--ink-3);
+  width: 18px;
+  text-align: center;
+}
+.nav-item[data-active="1"] .nav-icon { color: var(--accent); }
 .nav-cnt {
   margin-left: auto;
   font-family: var(--mono);

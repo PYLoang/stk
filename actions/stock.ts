@@ -10,6 +10,8 @@ function stockDataFromForm(formData: FormData) {
     name: formData.get("name"),
     quantity: formData.get("quantity"),
     price: formData.get("price"),
+    unit: formData.get("unit"),
+    lowAt: formData.get("lowAt"),
     categoryId: formData.get("categoryId"),
   });
 
