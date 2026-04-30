@@ -7,15 +7,20 @@ export default async function NewMovementPage() {
   const stocks = await prisma.stock.findMany({ orderBy: { name: "asc" } });
 
   return (
-    <div className="grid gap-6">
-      <div>
-        <h1 className="text-3xl font-semibold tracking-tight">New Movement</h1>
-        <p className="mt-2 text-slate-600">Create one import or export round with one or more stocks.</p>
+    <div className="page">
+      <div className="page-h">
+        <div className="page-title">
+          <span className="num">04 · NEW</span>
+          <h1 className="h-1">New stock movement</h1>
+        </div>
+        <Link href="/movements" className="btn btn--ghost">Cancel</Link>
       </div>
       {stocks.length === 0 ? (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          Create <Link className="underline" href="/stocks/new">stock</Link> before adding a movement.
-        </p>
+        <div className="panel">
+          <div className="panel-body">
+            Create <Link className="btn btn--ghost btn--sm" href="/stocks/new">stock</Link> before adding a movement.
+          </div>
+        </div>
       ) : (
         <MovementForm action={createMovement} stocks={stocks} />
       )}

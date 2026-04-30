@@ -7,15 +7,21 @@ export default async function NewStockPage() {
   const categories = await prisma.category.findMany({ orderBy: { name: "asc" } });
 
   return (
-    <div className="grid gap-6">
-      <div>
-        <h1 className="text-3xl font-semibold tracking-tight">New Stock</h1>
-        <p className="mt-2 text-slate-600">Create an inventory item.</p>
+    <div className="page">
+      <div className="page-h">
+        <div className="page-title">
+          <span className="num">02 · NEW</span>
+          <h1 className="h-1">New stock</h1>
+        </div>
+        <Link href="/stocks" className="btn btn--ghost">Cancel</Link>
       </div>
+
       {categories.length === 0 ? (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          Create a <Link className="underline" href="/categories/new">category</Link> before adding stock.
-        </p>
+        <div className="panel">
+          <div className="panel-body">
+            Create a <Link className="btn btn--ghost btn--sm" href="/categories/new">category</Link> before adding stock.
+          </div>
+        </div>
       ) : (
         <StockForm action={createStock} categories={categories} />
       )}

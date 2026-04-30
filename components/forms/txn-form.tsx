@@ -1,4 +1,8 @@
-import { SubmitButton } from "@/components/submit-button";
+"use client";
+
+import { useState } from "react";
+import { Segmented } from "@/components/ui/segmented";
+import { Listbox } from "@/components/ui/listbox";
 
 type TxnFormProps = {
   action: (formData: FormData) => Promise<void>;
@@ -6,84 +10,98 @@ type TxnFormProps = {
 };
 
 export function TxnForm({ action, stocks }: TxnFormProps) {
+  const [mode, setMode] = useState<"stock" | "subject">("stock");
+  const [type, setType] = useState<"IMPORT" | "EXPORT">("IMPORT");
+  const [stockId, setStockId] = useState("");
+
+  const stockOptions = stocks.map((s) => ({
+    value: s.id,
+    label: s.name,
+    meta: `${s.quantity} avail`,
+  }));
+
   return (
-    <form action={action} className="grid max-w-3xl gap-4 sm:grid-cols-2">
-      <label className="grid gap-2 text-sm font-medium text-slate-700">
-        Mode
-        <select
-          name="mode"
-          defaultValue="stock"
-          className="h-10 rounded-md border border-slate-300 px-3 text-slate-950 outline-none focus:border-slate-500"
-        >
-          <option value="stock">Existing stock</option>
-          <option value="subject">Free-form subject</option>
-        </select>
-      </label>
-      <label className="grid gap-2 text-sm font-medium text-slate-700">
-        Type
-        <select
-          name="type"
-          className="h-10 rounded-md border border-slate-300 px-3 text-slate-950 outline-none focus:border-slate-500"
-        >
-          <option value="IMPORT">Import</option>
-          <option value="EXPORT">Export</option>
-        </select>
-      </label>
-      <label className="grid gap-2 text-sm font-medium text-slate-700 sm:col-span-2">
-        Stock
-        <select
-          name="stockId"
-          defaultValue=""
-          className="h-10 rounded-md border border-slate-300 px-3 text-slate-950 outline-none focus:border-slate-500"
-        >
-          <option value="">No stock selected</option>
-          {stocks.map((stock) => (
-            <option key={stock.id} value={stock.id}>
-              {stock.name} ({stock.quantity} available)
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="grid gap-2 text-sm font-medium text-slate-700 sm:col-span-2">
-        Subject
-        <input
-          name="subject"
-          placeholder="Use this when mode is free-form subject"
-          className="h-10 rounded-md border border-slate-300 px-3 text-slate-950 outline-none focus:border-slate-500"
-        />
-      </label>
-      <label className="grid gap-2 text-sm font-medium text-slate-700">
-        Quantity
-        <input
-          name="quantity"
-          type="number"
-          min="1"
-          required
-          defaultValue="1"
-          className="h-10 rounded-md border border-slate-300 px-3 text-slate-950 outline-none focus:border-slate-500"
-        />
-      </label>
-      <label className="grid gap-2 text-sm font-medium text-slate-700">
-        Price
-        <input
-          name="price"
-          type="number"
-          min="0.01"
-          step="0.01"
-          required
-          className="h-10 rounded-md border border-slate-300 px-3 text-slate-950 outline-none focus:border-slate-500"
-        />
-      </label>
-      <label className="grid gap-2 text-sm font-medium text-slate-700 sm:col-span-2">
-        Remark
-        <textarea
-          name="remark"
-          rows={3}
-          className="rounded-md border border-slate-300 px-3 py-2 text-slate-950 outline-none focus:border-slate-500"
-        />
-      </label>
-      <div className="sm:col-span-2">
-        <SubmitButton>Create transaction</SubmitButton>
+    <form action={action} className="col gap-24" style={{ maxWidth: 720 }}>
+      <div className="row gap-24">
+        <div style={{ flex: 1 }}>
+          <div className="field-lbl">Mode <span className="req">*</span></div>
+          <Segmented
+            name="mode"
+            value={mode}
+            onChange={(v) => setMode(v as "stock" | "subject")}
+            options={[
+              { value: "stock", label: "Existing stock" },
+              { value: "subject", label: "Free-form subject" },
+            ]}
+          />
+        </div>
+        <div style={{ flex: 1 }}>
+          <div className="field-lbl">Type <span className="req">*</span></div>
+          <Segmented
+            name="type"
+            value={type}
+            onChange={(v) => setType(v as "IMPORT" | "EXPORT")}
+            options={[
+              { value: "IMPORT", label: "Import" },
+              { value: "EXPORT", label: "Export" },
+            ]}
+          />
+        </div>
+      </div>
+
+      {mode === "stock" ? (
+        <div>
+          <div className="field-lbl">Stock <span className="req">*</span></div>
+          <Listbox
+            name="stockId"
+            value={stockId}
+            onChange={setStockId}
+            options={stockOptions}
+            placeholder="Select stock"
+            required
+            searchable
+          />
+          <div className="field-help">Quantity will adjust this stock on submit.</div>
+        </div>
+      ) : (
+        <div>
+          <div className="field-lbl">Subject <span className="req">*</span></div>
+          <input
+            name="subject"
+            required
+            placeholder="e.g. Equipment rental, Utility bill…"
+            className="input"
+          />
+          <div className="field-help">Free-form transactions don't touch any stock balance.</div>
+        </div>
+      )}
+
+      <div className="row gap-24">
+        <div style={{ flex: 1 }}>
+          <div className="field-lbl">Quantity <span className="req">*</span></div>
+          <input name="quantity" type="number" min="1" required defaultValue="1" className="input mono" />
+        </div>
+        <div style={{ flex: 1 }}>
+          <div className="field-lbl">Unit price <span className="req">*</span></div>
+          <input
+            name="price"
+            type="number"
+            min="0.01"
+            step="0.01"
+            required
+            className="input mono"
+            placeholder="0.00"
+          />
+        </div>
+      </div>
+
+      <div>
+        <div className="field-lbl">Remark</div>
+        <textarea name="remark" rows={3} className="textarea" />
+      </div>
+
+      <div className="row gap-8 mt-8">
+        <button type="submit" className="btn btn--primary">Create transaction</button>
       </div>
     </form>
   );

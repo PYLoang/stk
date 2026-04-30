@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { dateTime } from "@/lib/format";
+import { fmtDate, fmtTime, money } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 
 export default async function MovementDetailPage({
@@ -15,32 +16,74 @@ export default async function MovementDetailPage({
 
   if (!movement) notFound();
 
+  const value = movement.items.reduce((sum, it) => sum + it.stock.price * it.quantity, 0);
+
   return (
-    <div className="grid gap-6">
-      <div>
-        <h1 className="text-3xl font-semibold tracking-tight">{movement.code}</h1>
-        <p className="mt-2 text-slate-600">
-          {movement.type} created {dateTime(movement.createdAt)}
-        </p>
+    <div className="page">
+      <div className="page-h">
+        <div className="page-title">
+          <span className="num">04 · DETAIL</span>
+          <h1 className="h-1 mono" style={{ letterSpacing: 0 }}>{movement.code}</h1>
+          <span className={movement.type === "IMPORT" ? "pill pill--in" : "pill pill--out"}>
+            {movement.type}
+          </span>
+        </div>
+        <Link href="/movements" className="btn btn--ghost">Back</Link>
       </div>
-      {movement.remark ? (
-        <p className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-700">{movement.remark}</p>
-      ) : null}
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-slate-500">
+
+      <div className="grid-bordered" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginBottom: 24 }}>
+        <div className="stat">
+          <div className="stat-lbl">Type</div>
+          <div className="stat-val" style={{ fontSize: 24 }}>{movement.type}</div>
+        </div>
+        <div className="stat">
+          <div className="stat-lbl">Items</div>
+          <div className="stat-val" style={{ fontSize: 24 }}>{movement.items.length}</div>
+        </div>
+        <div className="stat">
+          <div className="stat-lbl">Value</div>
+          <div className="stat-val" style={{ fontSize: 24 }}>{money(value)}</div>
+        </div>
+        <div className="stat">
+          <div className="stat-lbl">Posted</div>
+          <div className="stat-val mono" style={{ fontSize: 16, marginTop: 18 }}>
+            {fmtDate(movement.createdAt)} · {fmtTime(movement.createdAt)}
+          </div>
+        </div>
+      </div>
+
+      {movement.remark && (
+        <div className="panel mb-24">
+          <div className="panel-h">
+            <div className="ttl">Remark</div>
+          </div>
+          <div className="panel-body">{movement.remark}</div>
+        </div>
+      )}
+
+      <div className="panel">
+        <div className="panel-h">
+          <div className="ttl">Items</div>
+          <span className="muted mono" style={{ fontSize: 11 }}>{movement.items.length} line{movement.items.length === 1 ? "" : "s"}</span>
+        </div>
+        <table className="tbl">
+          <thead>
             <tr>
-              <th className="px-5 py-3 font-medium">Stock</th>
-              <th className="px-5 py-3 font-medium">Category</th>
-              <th className="px-5 py-3 font-medium">Quantity</th>
+              <th>Stock</th>
+              <th>Category</th>
+              <th className="right">Qty</th>
+              <th className="right">Unit price</th>
+              <th className="right">Subtotal</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody>
             {movement.items.map((item) => (
               <tr key={item.id}>
-                <td className="px-5 py-3 font-medium">{item.stock.name}</td>
-                <td className="px-5 py-3">{item.stock.category.name}</td>
-                <td className="px-5 py-3">{item.quantity}</td>
+                <td style={{ fontWeight: 500 }}>{item.stock.name}</td>
+                <td className="muted">{item.stock.category.name}</td>
+                <td className="right num">{item.quantity}</td>
+                <td className="right num">{money(item.stock.price)}</td>
+                <td className="right num" style={{ fontWeight: 500 }}>{money(item.stock.price * item.quantity)}</td>
               </tr>
             ))}
           </tbody>

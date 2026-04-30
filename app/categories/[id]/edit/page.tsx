@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { updateCategory } from "@/actions/category";
 import { CategoryForm } from "@/components/forms/category-form";
@@ -16,10 +17,13 @@ export default async function EditCategoryPage({
   const action = updateCategory.bind(null, category.id);
 
   return (
-    <div className="grid gap-6">
-      <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Edit Category</h1>
-        <p className="mt-2 text-slate-600">Update category details.</p>
+    <div className="page">
+      <div className="page-h">
+        <div className="page-title">
+          <span className="num">03 · EDIT</span>
+          <h1 className="h-1">{category.name}</h1>
+        </div>
+        <Link href="/categories" className="btn btn--ghost">Cancel</Link>
       </div>
       <CategoryForm action={action} category={category} />
     </div>

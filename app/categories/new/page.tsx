@@ -1,12 +1,16 @@
+import Link from "next/link";
 import { createCategory } from "@/actions/category";
 import { CategoryForm } from "@/components/forms/category-form";
 
 export default function NewCategoryPage() {
   return (
-    <div className="grid gap-6">
-      <div>
-        <h1 className="text-3xl font-semibold tracking-tight">New Category</h1>
-        <p className="mt-2 text-slate-600">Create a stock grouping.</p>
+    <div className="page">
+      <div className="page-h">
+        <div className="page-title">
+          <span className="num">03 · NEW</span>
+          <h1 className="h-1">New category</h1>
+        </div>
+        <Link href="/categories" className="btn btn--ghost">Cancel</Link>
       </div>
       <CategoryForm action={createCategory} />
     </div>

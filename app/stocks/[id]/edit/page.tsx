@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { updateStock } from "@/actions/stock";
 import { StockForm } from "@/components/forms/stock-form";
@@ -19,10 +20,13 @@ export default async function EditStockPage({
   const action = updateStock.bind(null, stock.id);
 
   return (
-    <div className="grid gap-6">
-      <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Edit Stock</h1>
-        <p className="mt-2 text-slate-600">Update item details and quantity.</p>
+    <div className="page">
+      <div className="page-h">
+        <div className="page-title">
+          <span className="num">02 · EDIT</span>
+          <h1 className="h-1">{stock.name}</h1>
+        </div>
+        <Link href="/stocks" className="btn btn--ghost">Cancel</Link>
       </div>
       <StockForm action={action} categories={categories} stock={stock} />
     </div>

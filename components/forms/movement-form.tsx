@@ -1,63 +1,120 @@
-import { SubmitButton } from "@/components/submit-button";
+"use client";
 
-type MovementFormProps = {
+import { useState } from "react";
+import { Segmented } from "@/components/ui/segmented";
+import { Listbox } from "@/components/ui/listbox";
+
+type Stock = { id: string; name: string; quantity: number; unit?: string };
+
+type Props = {
   action: (formData: FormData) => Promise<void>;
-  stocks: Array<{ id: string; name: string; quantity: number }>;
+  stocks: Stock[];
+  presetItems?: string[];
+  presetType?: "IMPORT" | "EXPORT";
 };
 
-export function MovementForm({ action, stocks }: MovementFormProps) {
+export function MovementForm({ action, stocks, presetItems, presetType }: Props) {
+  const initial = presetItems && presetItems.length > 0 ? [...presetItems] : [""];
+
+  const [type, setType] = useState<"IMPORT" | "EXPORT">(presetType ?? "IMPORT");
+  const [rows, setRows] = useState<string[]>(initial);
+
+  const setRow = (i: number, v: string) => {
+    setRows((prev) => prev.map((x, j) => (j === i ? v : x)));
+  };
+  const addRow = () => setRows((prev) => [...prev, ""]);
+  const removeRow = (i: number) => setRows((prev) => prev.filter((_, j) => j !== i));
+
+  const stockOptions = stocks.map((s) => ({
+    value: s.id,
+    label: s.name,
+    meta: `${s.quantity}${s.unit ? " " + s.unit : ""} avail`,
+  }));
+
+  const unitOf = (id: string) => stocks.find((s) => s.id === id)?.unit ?? "";
+
+  const usedIds = new Set(rows.filter(Boolean));
+
   return (
-    <form action={action} className="grid max-w-4xl gap-5">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="grid gap-2 text-sm font-medium text-slate-700">
-          Type
-          <select
-            name="type"
-            className="h-10 rounded-md border border-slate-300 px-3 text-slate-950 outline-none focus:border-slate-500"
-          >
-            <option value="IMPORT">Import</option>
-            <option value="EXPORT">Export</option>
-          </select>
-        </label>
-        <label className="grid gap-2 text-sm font-medium text-slate-700">
-          Remark
-          <input
-            name="remark"
-            className="h-10 rounded-md border border-slate-300 px-3 text-slate-950 outline-none focus:border-slate-500"
-          />
-        </label>
-      </div>
-      <div className="grid gap-3">
-        {[0, 1, 2, 3, 4].map((row) => (
-          <div key={row} className="grid gap-3 sm:grid-cols-[1fr_160px]">
-            <select
-              name="stockId"
-              required={row === 0}
-              defaultValue=""
-              className="h-10 rounded-md border border-slate-300 px-3 text-slate-950 outline-none focus:border-slate-500"
-            >
-              <option value="" disabled>
-                Select stock
-              </option>
-              {stocks.map((stock) => (
-                <option key={stock.id} value={stock.id}>
-                  {stock.name} ({stock.quantity} available)
-                </option>
-              ))}
-            </select>
-            <input
-              name="quantity"
-              type="number"
-              min="1"
-              required={row === 0}
-              placeholder="Quantity"
-              className="h-10 rounded-md border border-slate-300 px-3 text-slate-950 outline-none focus:border-slate-500"
-            />
-          </div>
-        ))}
-      </div>
+    <form action={action} className="col gap-24" style={{ maxWidth: 880 }}>
       <div>
-        <SubmitButton>Create movement</SubmitButton>
+        <div className="field-lbl">Type <span className="req">*</span></div>
+        <Segmented
+          name="type"
+          value={type}
+          onChange={(v) => setType(v as "IMPORT" | "EXPORT")}
+          options={[
+            { value: "IMPORT", label: "Import" },
+            { value: "EXPORT", label: "Export" },
+          ]}
+        />
+      </div>
+
+      <div>
+        <div className="row between mb-8">
+          <div className="field-lbl" style={{ marginBottom: 0 }}>Items</div>
+          <button type="button" className="btn btn--ghost btn--sm" onClick={addRow}>
+            <i className="fa-solid fa-plus" /> Add row
+          </button>
+        </div>
+        <div className="col" style={{ gap: 14 }}>
+          {rows.map((stockId, row) => {
+            const options = stockOptions.map((o) => ({
+              ...o,
+              disabled: o.value !== stockId && usedIds.has(o.value),
+              hint: o.value !== stockId && usedIds.has(o.value) ? "Already added" : undefined,
+            }));
+            return (
+              <div key={row} className="row gap-16">
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <Listbox
+                    name="stockId"
+                    value={stockId}
+                    onChange={(v) => setRow(row, v)}
+                    options={options}
+                    placeholder="Select stock"
+                    required={row === 0 && !rows.some(Boolean)}
+                  />
+                </div>
+                <div className="row gap-8" style={{ width: 160 }}>
+                  <input
+                    name="quantity"
+                    type="number"
+                    min="1"
+                    defaultValue={stockId ? 1 : ""}
+                    placeholder="Qty"
+                    className="input mono"
+                    style={{ flex: 1 }}
+                    required={!!stockId}
+                  />
+                  <span className="mono muted" style={{ fontSize: 12, minWidth: 28 }}>
+                    {unitOf(stockId) || "—"}
+                  </span>
+                </div>
+                {rows.length > 1 && (
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--icon"
+                    onClick={() => removeRow(row)}
+                    aria-label="Remove row"
+                    title="Remove"
+                  >
+                    <i className="fa-solid fa-xmark" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
+        <div className="field-lbl">Remark</div>
+        <textarea name="remark" rows={3} className="textarea" placeholder="Optional notes" />
+      </div>
+
+      <div className="row gap-8 mt-8">
+        <button type="submit" className="btn btn--primary">Create movement</button>
       </div>
     </form>
   );
