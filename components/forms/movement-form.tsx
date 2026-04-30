@@ -88,6 +88,7 @@ export function MovementForm({ action, stocks, presetItems, presetType }: Props)
                       name="quantity"
                       type="number"
                       min="1"
+                      step="1"
                       defaultValue={stockId ? 1 : ""}
                       placeholder="Qty"
                       className="input mono"

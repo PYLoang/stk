@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Listbox } from "@/components/ui/listbox";
+import { decimalForDisplay } from "@/lib/format";
 import { useClientValidation } from "./use-client-validation";
 
 type StockFormProps = {
@@ -45,6 +46,7 @@ export function StockForm({ action, categories, stock }: StockFormProps) {
             name="quantity"
             type="number"
             min="0"
+            step="1"
             required
             defaultValue={stock?.quantity ?? 0}
             className="input mono"
@@ -75,7 +77,7 @@ export function StockForm({ action, categories, stock }: StockFormProps) {
             min="0.01"
             step="0.01"
             required
-            defaultValue={stock?.price ? String(stock.price) : ""}
+            defaultValue={stock?.price ? decimalForDisplay(Number(stock.price)) : ""}
             className="input mono"
             placeholder="0.00"
             {...fieldProps("price", "Unit price")}
@@ -88,6 +90,7 @@ export function StockForm({ action, categories, stock }: StockFormProps) {
             name="lowAt"
             type="number"
             min="0"
+            step="1"
             defaultValue={stock?.lowAt ?? ""}
             placeholder="0"
             className="input mono"

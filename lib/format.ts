@@ -5,6 +5,19 @@ export function money(value: number | string) {
   });
 }
 
+export function decimalForStorage(value: number | string, digits = 10) {
+  return Number(Number(value).toFixed(digits));
+}
+
+export function decimalForDisplay(value: number | string, digits = 2) {
+  return Number(value).toFixed(digits);
+}
+
+export function hasMaxFractionDigits(value: number, digits = 2) {
+  const multiplier = 10 ** digits;
+  return Math.abs(value * multiplier - Math.round(value * multiplier)) < Number.EPSILON * 100;
+}
+
 export function num(value: number | string) {
   return Number(value).toLocaleString("en-US");
 }

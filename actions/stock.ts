@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { decimalForStorage } from "@/lib/format";
 import { stockSchema } from "@/lib/validations/stock";
 
 function stockDataFromForm(formData: FormData) {
@@ -17,7 +18,7 @@ function stockDataFromForm(formData: FormData) {
 
   return {
     ...parsed,
-    price: parsed.price,
+    price: decimalForStorage(parsed.price),
   };
 }
 

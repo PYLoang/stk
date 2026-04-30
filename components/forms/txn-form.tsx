@@ -114,6 +114,7 @@ export function TxnForm({ action, stocks }: TxnFormProps) {
             name="quantity"
             type="number"
             min="1"
+            step="1"
             required
             defaultValue="1"
             className="input mono"

@@ -19,7 +19,11 @@ function messageFor(el: FieldElement) {
   if (el.validity.valueMissing) return `${label} is required`;
   if (el.validity.rangeUnderflow) return `${label} must be at least ${el.getAttribute("min")}`;
   if (el.validity.rangeOverflow) return `${label} must be at most ${el.getAttribute("max")}`;
-  if (el.validity.stepMismatch) return `${label} must use a valid increment`;
+  if (el.validity.stepMismatch) {
+    return el.getAttribute("step") === "0.01"
+      ? `${label} must have at most 2 decimal places`
+      : `${label} must be a whole number`;
+  }
   if (el.validity.typeMismatch) return `${label} is invalid`;
   if (el.validity.patternMismatch) return `${label} is invalid`;
 

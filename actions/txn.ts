@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { stockQty } from "@/lib/format";
+import { decimalForStorage, stockQty } from "@/lib/format";
 import { txnSchema } from "@/lib/validations/txn";
 
 function parseTxnForm(formData: FormData) {
@@ -19,7 +19,7 @@ function parseTxnForm(formData: FormData) {
 
   return {
     ...parsed,
-    price: parsed.price,
+    price: decimalForStorage(parsed.price),
     subject: parsed.subject || null,
     stockId: parsed.stockId || null,
     remark: parsed.remark || null,
