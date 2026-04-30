@@ -105,11 +105,10 @@ export function StocksList({ stocks, categories, newSheet, bulkStocks }: Props) 
 
   const exportCsv = () => {
     const rows = [
-      ["Name", "Category", "SKU", "Quantity", "Unit", "Price", "Value"],
+      ["Name", "Category", "Quantity", "Unit", "Price", "Value"],
       ...visible.map((s) => [
         s.name,
         s.category.name,
-        s.id.slice(-6).toUpperCase(),
         String(s.quantity),
         s.unit,
         s.price.toFixed(2),
@@ -213,7 +212,6 @@ export function StocksList({ stocks, categories, newSheet, bulkStocks }: Props) 
                 </th>
                 <th onClick={() => toggleSort("name")} style={{ cursor: "pointer" }}>Item{sortArr("name")}</th>
                 <th onClick={() => toggleSort("category")} style={{ cursor: "pointer" }}>Category{sortArr("category")}</th>
-                <th>SKU</th>
                 <th className="right" onClick={() => toggleSort("quantity")} style={{ cursor: "pointer" }}>Qty{sortArr("quantity")}</th>
                 <th>Unit</th>
                 <th className="right" onClick={() => toggleSort("price")} style={{ cursor: "pointer" }}>Price{sortArr("price")}</th>
@@ -225,7 +223,6 @@ export function StocksList({ stocks, categories, newSheet, bulkStocks }: Props) 
               {visible.map((s) => {
                 const low = s.quantity <= s.lowAt;
                 const checked = selected.has(s.id);
-                const sku = s.id.slice(-6).toUpperCase();
                 return (
                   <tr key={s.id} data-selected={checked ? 1 : 0}>
                     <td>
@@ -250,7 +247,6 @@ export function StocksList({ stocks, categories, newSheet, bulkStocks }: Props) 
                     <td>
                       <span className="cat-tag">{s.category.name}</span>
                     </td>
-                    <td className="num muted">{sku}</td>
                     <td className="right num">
                       <span style={{ color: low ? "var(--warn)" : undefined }}>{s.quantity}</span>
                     </td>

@@ -33,8 +33,6 @@ export function MovementForm({ action, stocks, presetItems, presetType }: Props)
     meta: `${s.quantity}${s.unit ? " " + s.unit : ""} avail`,
   }));
 
-  const unitOf = (id: string) => stocks.find((s) => s.id === id)?.unit ?? "";
-
   const usedIds = new Set(rows.filter(Boolean));
 
   return (
@@ -83,7 +81,7 @@ export function MovementForm({ action, stocks, presetItems, presetType }: Props)
                   />
                   {error(`stockId-${row}`)}
                 </div>
-                <div className="row gap-8" style={{ width: 160 }}>
+                <div style={{ width: 112 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <input
                       name="quantity"
@@ -97,9 +95,6 @@ export function MovementForm({ action, stocks, presetItems, presetType }: Props)
                     />
                     {error(`quantity-${row}`)}
                   </div>
-                  <span className="mono muted" style={{ fontSize: 12, minWidth: 28 }}>
-                    {unitOf(stockId) || "—"}
-                  </span>
                 </div>
                 {rows.length > 1 && (
                   <button
