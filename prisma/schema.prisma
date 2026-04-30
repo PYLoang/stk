@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id     String  @id @default(cuid())
+  name   String  @unique
+  stocks Stock[]
+}
+
+model Stock {
+  id         String         @id @default(cuid())
+  name       String
+  quantity   Int            @default(0)
+  price      Float
+  categoryId String
+  category   Category       @relation(fields: [categoryId], references: [id])
+  movements  MovementItem[]
+  txns       Txn[]
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+}
+
+model Movement {
+  id        String         @id @default(cuid())
+  code      String         @unique
+  type      String
+  remark    String?
+  items     MovementItem[]
+  createdAt DateTime       @default(now())
+}
+
+model MovementItem {
+  id         String   @id @default(cuid())
+  movementId String
+  stockId    String
+  quantity   Int
+  movement   Movement @relation(fields: [movementId], references: [id], onDelete: Cascade)
+  stock      Stock    @relation(fields: [stockId], references: [id])
+
+  @@unique([movementId, stockId])
+}
+
+model Txn {
+  id        String   @id @default(cuid())
+  stockId   String?
+  subject   String?
+  type      String
+  quantity  Int
+  price     Float
+  remark    String?
+  stock     Stock?   @relation(fields: [stockId], references: [id])
+  createdAt DateTime @default(now())
+}
