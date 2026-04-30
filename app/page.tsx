@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { fmtDate, fmtTime, money, num } from "@/lib/format";
+import { fmtDateTime, money, num } from "@/lib/format";
 
 const LOW_THRESHOLD = 10;
 
@@ -55,8 +55,7 @@ export default async function Home() {
         </div>
         <div className="col" style={{ alignItems: "flex-end", gap: 6 }}>
           <span className="mono" style={{ fontSize: 11, color: "var(--ink-3)" }}>
-            {today.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase()} ·{" "}
-            {today.getDate()} {today.toLocaleDateString("en-US", { month: "short" }).toUpperCase()} · {today.getFullYear()}
+            {fmtDateTime(today)}
           </span>
           <span className="mono" style={{ fontSize: 11, color: "var(--ink-3)" }}>OPEN · 07:00 — 19:00</span>
         </div>
@@ -141,7 +140,7 @@ export default async function Home() {
                       {m.remark || <span className="faint">—</span>}
                     </td>
                     <td className="right num">{m.items.length}</td>
-                    <td className="num muted nowrap">{fmtDate(m.createdAt)} · {fmtTime(m.createdAt)}</td>
+                    <td className="num muted nowrap">{fmtDateTime(m.createdAt)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -219,7 +218,7 @@ export default async function Home() {
                     <td className="right num">{t.quantity}</td>
                     <td className="right num">{money(t.price)}</td>
                     <td className="right num" style={{ fontWeight: 500 }}>{money(t.quantity * t.price)}</td>
-                    <td className="num muted nowrap">{fmtDate(t.createdAt)} · {fmtTime(t.createdAt)}</td>
+                    <td className="num muted nowrap">{fmtDateTime(t.createdAt)}</td>
                   </tr>
                 );
               })}

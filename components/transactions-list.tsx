@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Sheet } from "./sheet";
 import { deleteTxn } from "@/actions/txn";
-import { fmtDate, fmtTime, money } from "@/lib/format";
+import { fmtDateTime, money } from "@/lib/format";
 
 type Txn = {
   id: string;
@@ -154,7 +154,7 @@ export function TransactionsList({ txns, newSheet }: Props) {
                     <td className="right num">{t.quantity}</td>
                     <td className="right num">{money(t.price)}</td>
                     <td className="right num" style={{ fontWeight: 500 }}>{money(t.quantity * t.price)}</td>
-                    <td className="num muted nowrap">{fmtDate(created)} · {fmtTime(created)}</td>
+                    <td className="num muted nowrap">{fmtDateTime(created)}</td>
                     <td className="right">
                       <div className="row-actions">
                         <form action={deleteTxn}>

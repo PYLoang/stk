@@ -9,19 +9,21 @@ export function num(value: number | string) {
   return Number(value).toLocaleString("en-US");
 }
 
-export function dateTime(value: Date) {
-  return new Intl.DateTimeFormat("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(value);
-}
-
 export function fmtDate(value: Date) {
   const d = value.getDate().toString().padStart(2, "0");
-  const m = value.toLocaleDateString("en-US", { month: "short" }).toUpperCase();
-  return `${d} ${m}`;
+  const m = (value.getMonth() + 1).toString().padStart(2, "0");
+  const y = value.getFullYear();
+  return `${d}/${m}/${y}`;
 }
 
 export function fmtTime(value: Date) {
-  return value.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+  const h = value.getHours().toString().padStart(2, "0");
+  const m = value.getMinutes().toString().padStart(2, "0");
+  return `${h}:${m}`;
 }
+
+export function fmtDateTime(value: Date) {
+  return `${fmtDate(value)} ${fmtTime(value)}`;
+}
+
+export const dateTime = fmtDateTime;

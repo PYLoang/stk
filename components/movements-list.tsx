@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Sheet } from "./sheet";
-import { fmtDate, fmtTime, money } from "@/lib/format";
+import { fmtDateTime, money } from "@/lib/format";
 
 type Item = {
   id: string;
@@ -108,7 +108,7 @@ export function MovementsList({ movements, newButtonLabel, newSheet }: Props) {
                 </div>
                 <div>
                   <div className="code">{m.code}</div>
-                  <div className="when">{fmtDate(created)} · {fmtTime(created)}</div>
+                  <div className="when">{fmtDateTime(created)}</div>
                 </div>
                 <div className="col" style={{ gap: 8, minWidth: 0 }}>
                   <div style={{ fontWeight: 500 }}>
@@ -152,8 +152,7 @@ export function MovementsList({ movements, newButtonLabel, newSheet }: Props) {
               <div className="col" style={{ gap: 4 }}>
                 <span className="eyebrow">Posted</span>
                 <span className="mono" style={{ fontSize: 13 }}>
-                  {fmtDate(typeof active.createdAt === "string" ? new Date(active.createdAt) : active.createdAt)} ·{" "}
-                  {fmtTime(typeof active.createdAt === "string" ? new Date(active.createdAt) : active.createdAt)}
+                  {fmtDateTime(typeof active.createdAt === "string" ? new Date(active.createdAt) : active.createdAt)}
                 </span>
               </div>
               <div className="col" style={{ gap: 4 }}>

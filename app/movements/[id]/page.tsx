@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { fmtDate, fmtTime, money } from "@/lib/format";
+import { fmtDateTime, money } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 
 export default async function MovementDetailPage({
@@ -47,7 +47,7 @@ export default async function MovementDetailPage({
         <div className="stat">
           <div className="stat-lbl">Posted</div>
           <div className="stat-val mono" style={{ fontSize: 16, marginTop: 18 }}>
-            {fmtDate(movement.createdAt)} · {fmtTime(movement.createdAt)}
+            {fmtDateTime(movement.createdAt)}
           </div>
         </div>
       </div>

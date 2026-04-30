@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { fmtDateTime } from "@/lib/format";
 import { SidebarNav } from "./sidebar-nav";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -22,12 +23,11 @@ export function Sidebar() {
 
 function SidebarFoot() {
   const now = new Date();
-  const date = now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   const weekday = now.toLocaleDateString("en-US", { weekday: "long" });
   return (
     <div className="sidebar-foot">
       <div className="col" style={{ gap: 2 }}>
-        <span className="mono" style={{ fontSize: 11, color: "var(--ink-2)" }}>{date}</span>
+        <span className="mono" style={{ fontSize: 11, color: "var(--ink-2)" }}>{fmtDateTime(now)}</span>
         <span className="mono" style={{ fontSize: 10.5, color: "var(--ink-3)" }}>{weekday} · open</span>
       </div>
       <ThemeToggle />
