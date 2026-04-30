@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Sheet } from "./sheet";
+import { MovementItemsTable } from "./movement-items-table";
 import { fmtDateTime, money } from "@/lib/format";
 
 type Item = {
@@ -174,33 +175,7 @@ export function MovementsList({ movements, newButtonLabel, newSheet }: Props) {
 
             <div>
               <div className="eyebrow mb-8">Items</div>
-              <table className="tbl">
-                <thead>
-                  <tr>
-                    <th>Item</th>
-                    <th className="right">Qty</th>
-                    <th className="right">Unit price</th>
-                    <th className="right">Subtotal</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {active.items.map((it) => (
-                    <tr key={it.id}>
-                      <td>
-                        <div className="col" style={{ gap: 2 }}>
-                          <span style={{ fontWeight: 500 }}>{it.stock.name}</span>
-                          <span className="muted mono" style={{ fontSize: 11 }}>
-                            {it.stock.category.name}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="right num">{it.quantity}</td>
-                      <td className="right num">{money(it.stock.price)}</td>
-                      <td className="right num">{money(it.stock.price * it.quantity)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <MovementItemsTable items={active.items} variant="compact" />
             </div>
           </div>
         )}

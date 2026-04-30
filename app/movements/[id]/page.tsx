@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { MovementItemsTable } from "@/components/movement-items-table";
 import { fmtDateTime, money } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 
@@ -66,28 +67,7 @@ export default async function MovementDetailPage({
           <div className="ttl">Items</div>
           <span className="muted mono" style={{ fontSize: 11 }}>{movement.items.length} line{movement.items.length === 1 ? "" : "s"}</span>
         </div>
-        <table className="tbl">
-          <thead>
-            <tr>
-              <th>Stock</th>
-              <th>Category</th>
-              <th className="right">Qty</th>
-              <th className="right">Unit price</th>
-              <th className="right">Subtotal</th>
-            </tr>
-          </thead>
-          <tbody>
-            {movement.items.map((item) => (
-              <tr key={item.id}>
-                <td style={{ fontWeight: 500 }}>{item.stock.name}</td>
-                <td className="muted">{item.stock.category.name}</td>
-                <td className="right num">{item.quantity}</td>
-                <td className="right num">{money(item.stock.price)}</td>
-                <td className="right num" style={{ fontWeight: 500 }}>{money(item.stock.price * item.quantity)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <MovementItemsTable items={movement.items} />
       </div>
     </div>
   );
