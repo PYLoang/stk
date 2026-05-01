@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en" data-theme="light" data-density="comfortable">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Marbled — Stock System</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;1,8..60,400&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer" />
+
+  <link rel="stylesheet" href="styles.css" />
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="data.jsx"></script>
+  <script type="text/babel" src="ui.jsx"></script>
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+  <script type="text/babel" src="page-dashboard.jsx"></script>
+  <script type="text/babel" src="page-stocks.jsx"></script>
+  <script type="text/babel" src="page-movements.jsx"></script>
+  <script type="text/babel" src="page-transactions.jsx"></script>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script type="text/babel">
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "theme": "dark",
+      "density": "comfortable",
+      "accent": "#dc4f2a",
+      "displaySerif": true
+    }/*EDITMODE-END*/;
+
+    const hexToOklchAccent = (hex) => {
+      // Convert hex to OKLCH-friendly value via CSS — we'll just use the hex directly
+      return hex;
+    };
+
+    function App() {
+      const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+      const [route, setRoute] = React.useState('dashboard');
+      const [theme, setTheme] = React.useState(tweaks.theme);
+      const [toasts, setToasts] = React.useState([]);
+      const [confirm, setConfirm] = React.useState(null);
+      const [sheet, setSheet] = React.useState(null);
+
+      // Live data state
+      const [stocks, setStocks] = React.useState(STOCKS);
+      const [categories, setCategories] = React.useState(CATEGORIES);
+      const [movements, setMovements] = React.useState(MOVEMENTS);
+      const [transactions, setTransactions] = React.useState(TRANSACTIONS);
+
+      // Filter / sort state per page
+      const [stockFilter, setStockFilter] = React.useState({ q: '', categoryId: 'all', lowOnly: false });
+      const [stockSort, setStockSort] = React.useState({ key: 'name', dir: 'asc' });
+      const [stockSelected, setStockSelected] = React.useState(new Set());
+      const [movementFilter, setMovementFilter] = React.useState({ q: '', type: 'all' });
+      const [txnFilter, setTxnFilter] = React.useState({ q: '', type: 'all', mode: 'all' });
+
+      // Apply theme + density to root
+      React.useEffect(() => {
+        document.documentElement.setAttribute('data-theme', theme);
+        setTweak('theme', theme);
+      }, [theme]);
+      React.useEffect(() => {
+        document.documentElement.setAttribute('data-density', tweaks.density);
+      }, [tweaks.density]);
+      React.useEffect(() => {
+        document.documentElement.style.setProperty('--accent', tweaks.accent);
+        document.documentElement.style.setProperty('--accent-soft', tweaks.accent + '1f');
+      }, [tweaks.accent]);
+      React.useEffect(() => {
+        if (!tweaks.displaySerif) {
+          document.documentElement.style.setProperty('--serif', 'Inter Tight, sans-serif');
+        } else {
+          document.documentElement.style.removeProperty('--serif');
+        }
+      }, [tweaks.displaySerif]);
+
+      // Toast helpers
+      const toast = (title, desc, tone = 'default') => {
+        const id = Math.random().toString(36).slice(2);
+        setToasts(t => [...t, { id, title, desc, tone }]);
+        setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 4000);
+      };
+      const dismissToast = (id) => setToasts(t => t.filter(x => x.id !== id));
+
+      const openSheet = (kind, data = {}) => setSheet({ kind, data });
+      const closeSheet = () => setSheet(null);
+
+      // Mutations
+      const createStock = (data) => {
+        const id = 's_' + Math.random().toString(36).slice(2, 8);
+        const sku = data.sku || (categories.find(c => c.id === data.categoryId)?.name?.slice(0,2).toUpperCase() || 'XX') + '-' + Math.floor(Math.random()*900+100);
+        setStocks(prev => [...prev, { id, ...data, sku }]);
+        toast('Stock created', `"${data.name}" added`, 'pos');
+        return id;
+      };
+      const updateStock = (id, data) => {
+        setStocks(prev => prev.map(s => s.id === id ? { ...s, ...data } : s));
+        toast('Stock updated', data.name);
+      };
+      const deleteStock = (id, name) => {
+        setStocks(prev => prev.filter(s => s.id !== id));
+        toast('Stock deleted', `"${name}" removed`, 'neg');
+      };
+
+      const createCategory = (data) => {
+        const id = 'cat_' + Math.random().toString(36).slice(2, 6);
+        const code = data.code || String(categories.length + 1).padStart(2, '0');
+        setCategories(prev => [...prev, { id, ...data, code }]);
+        toast('Category created', data.name, 'pos');
+      };
+      const deleteCategory = (id, name) => {
+        const used = stocks.some(s => s.categoryId === id);
+        if (used) {
+          toast('Cannot delete', `"${name}" still has stocks`, 'neg');
+          return;
+        }
+        setCategories(prev => prev.filter(c => c.id !== id));
+        toast('Category deleted', name, 'neg');
+      };
+
+      const createMovement = (data) => {
+        const id = 'mv_' + Math.random().toString(36).slice(2, 8);
+        const createdAt = new Date().toISOString();
+        setMovements(prev => [...prev, { id, ...data, createdAt }]);
+        // adjust stock quantities
+        setStocks(prev => prev.map(s => {
+          const item = data.items.find(i => i.stockId === s.id);
+          if (!item) return s;
+          return { ...s, quantity: data.type === 'IMPORT' ? s.quantity + item.quantity : s.quantity - item.quantity };
+        }));
+        // also append per-item transactions
+        const newTxns = data.items.map(it => {
+          const s = stocks.find(x => x.id === it.stockId);
+          return {
+            id: 't_' + Math.random().toString(36).slice(2, 8),
+            stockId: it.stockId, subject: null, type: data.type,
+            quantity: it.quantity, price: s?.price || 0,
+            remark: data.remark || '', createdAt,
+          };
+        });
+        setTransactions(prev => [...prev, ...newTxns]);
+        toast(`${data.type === 'IMPORT' ? 'Import' : 'Export'} posted`, `${data.code} · ${data.items.length} item${data.items.length>1?'s':''}`, 'pos');
+      };
+      const deleteMovement = (id, code) => {
+        setMovements(prev => prev.filter(m => m.id !== id));
+        toast('Movement deleted', code, 'neg');
+      };
+
+      const createTransaction = (data) => {
+        const id = 't_' + Math.random().toString(36).slice(2, 8);
+        const createdAt = new Date().toISOString();
+        setTransactions(prev => [...prev, { id, ...data, createdAt }]);
+        // if tied to stock, adjust quantity
+        if (data.stockId) {
+          setStocks(prev => prev.map(s => {
+            if (s.id !== data.stockId) return s;
+            return { ...s, quantity: data.type === 'IMPORT' ? s.quantity + data.quantity : s.quantity - data.quantity };
+          }));
+        }
+        toast('Transaction posted', `${data.type} · ${fmtMoney(data.quantity * data.price)}`, 'pos');
+      };
+      const deleteTransaction = (id, label) => {
+        setTransactions(prev => prev.filter(t => t.id !== id));
+        toast('Transaction deleted', label || '', 'neg');
+      };
+
+      // Confirm helpers
+      const askDelete = (kind, id, name) => {
+        setConfirm({
+          title: `Delete ${kind}?`,
+          desc: `"${name}" will be permanently removed. This cannot be undone.`,
+          confirmLabel: 'Delete',
+          tone: 'danger',
+          onConfirm: () => {
+            if (kind === 'stock') deleteStock(id, name);
+            if (kind === 'category') deleteCategory(id, name);
+            if (kind === 'movement') deleteMovement(id, name);
+            if (kind === 'transaction') deleteTransaction(id, name);
+            setConfirm(null);
+          },
+        });
+      };
+
+      const counts = {
+        stocks: stocks.length,
+        categories: categories.length,
+        movements: movements.length,
+        transactions: transactions.length,
+      };
+
+      // sheet content
+      const renderSheet = () => {
+        if (!sheet) return null;
+        const k = sheet.kind;
+        if (k === 'new-stock') {
+          return <Sheet open eyebrow="02 · Stocks" title="New stock" onClose={closeSheet}>
+            <StockForm categories={categories}
+                       onSubmit={(d) => { createStock(d); closeSheet(); }}
+                       onCancel={closeSheet} />
+          </Sheet>;
+        }
+        if (k === 'edit-stock') {
+          const s = stocks.find(x => x.id === sheet.data.id);
+          return <Sheet open eyebrow="02 · Stocks" title={`Edit · ${s?.name}`} onClose={closeSheet}>
+            <StockForm stock={s} categories={categories}
+                       onSubmit={(d) => { updateStock(s.id, d); closeSheet(); }}
+                       onCancel={closeSheet} />
+          </Sheet>;
+        }
+        if (k === 'new-category') {
+          return <Sheet open eyebrow="03 · Categories" title="New category" onClose={closeSheet}>
+            <CategoryForm onSubmit={(d) => { createCategory(d); closeSheet(); }} onCancel={closeSheet} />
+          </Sheet>;
+        }
+        if (k === 'edit-category') {
+          const c = categories.find(x => x.id === sheet.data.id);
+          return <Sheet open eyebrow="03 · Categories" title={`Edit · ${c?.name}`} onClose={closeSheet}>
+            <CategoryForm category={c} onSubmit={(d) => {
+              setCategories(prev => prev.map(x => x.id === c.id ? { ...x, ...d } : x));
+              toast('Category updated', d.name);
+              closeSheet();
+            }} onCancel={closeSheet} />
+          </Sheet>;
+        }
+        if (k === 'new-movement') {
+          return <Sheet open eyebrow="04 · Movements" title="New stock movement" onClose={closeSheet}>
+            <MovementForm stocks={stocks} categories={categories}
+                          preset={sheet.data?.preset}
+                          presetItems={sheet.data?.presetItems}
+                          onSubmit={(d) => { createMovement(d); setStockSelected(new Set()); closeSheet(); }}
+                          onCancel={closeSheet}
+                          onCreateStockInline={createStock} />
+          </Sheet>;
+        }
+        if (k === 'view-movement') {
+          const m = movements.find(x => x.id === sheet.data.id);
+          if (!m) return null;
+          const value = m.items.reduce((sum, it) => {
+            const s = stocks.find(x => x.id === it.stockId);
+            return sum + (s ? s.price * it.quantity : 0);
+          }, 0);
+          return <Sheet open eyebrow="04 · Movements" title={m.code} onClose={closeSheet}>
+            <div className="col gap-24">
+              <div className="row gap-24">
+                <div className="col" style={{ gap: 4 }}>
+                  <span className="eyebrow">Type</span>
+                  <span className={m.type === 'IMPORT' ? 'pill pill--in' : 'pill pill--out'}>{m.type}</span>
+                </div>
+                <div className="col" style={{ gap: 4 }}>
+                  <span className="eyebrow">Posted</span>
+                  <span className="mono" style={{ fontSize: 13 }}>{fmtDate(m.createdAt)} · {fmtTime(m.createdAt)}</span>
+                </div>
+                <div className="col" style={{ gap: 4 }}>
+                  <span className="eyebrow">Items</span>
+                  <span className="mono" style={{ fontSize: 13 }}>{m.items.length}</span>
+                </div>
+                <div className="col" style={{ gap: 4 }}>
+                  <span className="eyebrow">Value</span>
+                  <span className="mono" style={{ fontSize: 13, fontWeight: 500 }}>{fmtMoney(value)}</span>
+                </div>
+              </div>
+              <div>
+                <div className="eyebrow mb-8">Remark</div>
+                <div style={{ fontSize: 14 }}>{m.remark || <span className="muted">—</span>}</div>
+              </div>
+              <div>
+                <div className="eyebrow mb-8">Items</div>
+                <table className="tbl">
+                  <thead>
+                    <tr>
+                      <th>Item</th><th className="right">Qty</th><th className="right">Unit price</th><th className="right">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {m.items.map(it => {
+                      const s = stocks.find(x => x.id === it.stockId);
+                      return (
+                        <tr key={it.stockId}>
+                          <td>
+                            <div className="col" style={{ gap: 2 }}>
+                              <span style={{ fontWeight: 500 }}>{s?.name || '—'}</span>
+                              <span className="muted mono" style={{ fontSize: 11 }}>{s?.sku}</span>
+                            </div>
+                          </td>
+                          <td className="right num">{it.quantity} {s?.unit}</td>
+                          <td className="right num">{fmtMoney(s?.price || 0)}</td>
+                          <td className="right num">{fmtMoney((s?.price || 0) * it.quantity)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </Sheet>;
+        }
+        if (k === 'new-transaction') {
+          return <Sheet open eyebrow="05 · Transactions" title="New transaction" onClose={closeSheet}>
+            <TransactionForm stocks={stocks} categories={categories}
+                             onSubmit={(d) => { createTransaction(d); closeSheet(); }}
+                             onCancel={closeSheet} />
+          </Sheet>;
+        }
+      };
+
+      const handleTopAction = (to) => openSheet(to);
+
+      let pageEl = null;
+      if (route === 'dashboard') pageEl = <Dashboard stocks={stocks} categories={categories} movements={movements} transactions={transactions} valueSeries={VALUE_SERIES} flowSeries={FLOW_SERIES} setRoute={setRoute} openSheet={openSheet} />;
+      if (route === 'stocks') pageEl = <StocksPage stocks={stocks} categories={categories} sort={stockSort} setSort={setStockSort} filter={stockFilter} setFilter={setStockFilter} selected={stockSelected} setSelected={setStockSelected} openSheet={openSheet} onDelete={(id, name) => askDelete('stock', id, name)} />;
+      if (route === 'categories') pageEl = <CategoriesPage categories={categories} stocks={stocks} openSheet={openSheet} onDelete={(id, name) => askDelete('category', id, name)} />;
+      if (route === 'movements') pageEl = <MovementsPage movements={movements} stocks={stocks} categories={categories} filter={movementFilter} setFilter={setMovementFilter} openSheet={openSheet} onDelete={(id, name) => askDelete('movement', id, name)} />;
+      if (route === 'transactions') pageEl = <TransactionsPage transactions={transactions} stocks={stocks} filter={txnFilter} setFilter={setTxnFilter} openSheet={openSheet} onDelete={(id, name) => askDelete('transaction', id, name)} />;
+
+      return (
+        <div className="app">
+          <Sidebar route={route} setRoute={setRoute} theme={theme} setTheme={setTheme} counts={counts} />
+          <div className="main">
+            <Topbar route={route} onAction={handleTopAction} />
+            {pageEl}
+          </div>
+
+          {renderSheet()}
+          <Confirm open={!!confirm} {...(confirm || {})} onCancel={() => setConfirm(null)} />
+          <ToastStack toasts={toasts} dismiss={dismissToast} />
+
+          <TweaksPanel title="Tweaks">
+            <TweakSection label="Appearance" />
+            <TweakRadio label="Theme" value={theme}
+                        options={[{ value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }]}
+                        onChange={setTheme} />
+            <TweakRadio label="Density" value={tweaks.density}
+                        options={[
+                          { value: 'compact', label: 'Compact' },
+                          { value: 'comfortable', label: 'Comfy' },
+                          { value: 'comfy', label: 'Airy' },
+                        ]}
+                        onChange={(v) => setTweak('density', v)} />
+            <TweakColor label="Accent" value={tweaks.accent}
+                        onChange={(v) => setTweak('accent', v)} />
+            <TweakToggle label="Editorial serif headings" value={tweaks.displaySerif}
+                         onChange={(v) => setTweak('displaySerif', v)} />
+
+            <TweakSection label="Quick actions" />
+            <TweakButton label="Reset all data" secondary onClick={() => {
+              setStocks(STOCKS); setCategories(CATEGORIES);
+              setMovements(MOVEMENTS); setTransactions(TRANSACTIONS);
+              toast('Data reset', 'Restored seed dataset');
+            }} />
+          </TweaksPanel>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('app')).render(<App />);
+  </script>
+</body>
+</html>
