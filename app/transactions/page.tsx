@@ -20,6 +20,7 @@ export default async function TransactionsPage() {
     subject: t.subject,
     stockId: t.stockId,
     stock: t.stock ? { id: t.stock.id, name: t.stock.name } : null,
+    remark: t.remark,
     createdAt: t.createdAt,
   }));
 

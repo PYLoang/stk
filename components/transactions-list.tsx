@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Sheet } from "./sheet";
 import { fmtDateTime, money } from "@/lib/format";
+import { deleteTxn } from "@/actions/txn";
 
 type Txn = {
   id: string;
@@ -12,6 +13,7 @@ type Txn = {
   subject: string | null;
   stockId: string | null;
   stock: { id: string; name: string } | null;
+  remark?: string | null;
   createdAt: Date | string;
 };
 
@@ -37,6 +39,8 @@ export function TransactionsList({ txns, newSheet }: Props) {
     stock: txns.filter((t) => t.stockId).length,
     subject: txns.filter((t) => !t.stockId).length,
   }), [txns]);
+
+  // placeholder: totals computed from `visible` after it's defined
 
   const visible = useMemo(() => {
     const ql = q.trim().toLowerCase();
@@ -79,6 +83,12 @@ export function TransactionsList({ txns, newSheet }: Props) {
   const sortArr = (k: SortKey) => sortKey === k ? (sortDir === "asc" ? " ↑" : " ↓") : "";
   const pad = (n: number) => String(n).padStart(2, "0");
 
+  const totals = useMemo(() => {
+    const totalIn = visible.filter((t) => t.type === "IMPORT").reduce((s, t) => s + t.quantity * t.price, 0);
+    const totalOut = visible.filter((t) => t.type === "EXPORT").reduce((s, t) => s + t.quantity * t.price, 0);
+    return { totalIn, totalOut };
+  }, [visible]);
+
   return (
     <>
       <div className="row between" style={{ alignItems: "flex-end", marginBottom: 18, gap: 24, flexWrap: "wrap" }}>
@@ -86,12 +96,27 @@ export function TransactionsList({ txns, newSheet }: Props) {
           <span className="num">05</span>
           <h1 className="h-1">Transactions</h1>
           <span className="muted mono" style={{ fontSize: 12 }}>
-            · {visible.length} of {txns.length}
+            · {txns.length} entries
           </span>
         </div>
         <button className="btn btn--primary" onClick={() => setNewOpen(true)}>
           <i className="fa-solid fa-plus" /> New transaction
         </button>
+      </div>
+
+      <div className="grid-bordered mb-24" style={{ gridTemplateColumns: "1fr 1fr" }}>
+        <div className="stat" style={{ padding: "18px 22px" }}>
+          <div className="stat-lbl">In</div>
+          <div className="mono" style={{ fontSize: 22, fontWeight: 500, marginTop: 8, color: "var(--pos)" }}>
+            +{money(totals.totalIn)}
+          </div>
+        </div>
+        <div className="stat" style={{ padding: "18px 22px" }}>
+          <div className="stat-lbl">Out</div>
+          <div className="mono" style={{ fontSize: 22, fontWeight: 500, marginTop: 8, color: "var(--neg)" }}>
+            −{money(totals.totalOut)}
+          </div>
+        </div>
       </div>
 
       <div className="filterbar" style={{ borderBottom: "1px solid var(--rule)", paddingBottom: 14, marginBottom: 14 }}>
@@ -126,18 +151,20 @@ export function TransactionsList({ txns, newSheet }: Props) {
           <table className="tbl">
             <thead>
               <tr>
-                <th onClick={() => toggleSort("type")} style={{ cursor: "pointer", width: 90 }}>Type{sortArr("type")}</th>
-                <th onClick={() => toggleSort("subject")} style={{ cursor: "pointer" }}>Subject{sortArr("subject")}</th>
+                <th onClick={() => toggleSort("type")} style={{ cursor: "pointer", width: 70 }}>Type{sortArr("type")}</th>
+                <th onClick={() => toggleSort("subject")} style={{ cursor: "pointer" }}>Reference{sortArr("subject")}</th>
+                <th>Remark</th>
                 <th className="right" onClick={() => toggleSort("quantity")} style={{ cursor: "pointer" }}>Qty{sortArr("quantity")}</th>
-                <th className="right" onClick={() => toggleSort("price")} style={{ cursor: "pointer" }}>Unit price{sortArr("price")}</th>
-                <th className="right" onClick={() => toggleSort("value")} style={{ cursor: "pointer" }}>Value{sortArr("value")}</th>
-                <th className="nowrap" onClick={() => toggleSort("createdAt")} style={{ cursor: "pointer" }}>Posted{sortArr("createdAt")}</th>
+                <th className="right" onClick={() => toggleSort("price")} style={{ cursor: "pointer" }}>Price{sortArr("price")}</th>
+                <th className="right" onClick={() => toggleSort("value")} style={{ cursor: "pointer" }}>Amount{sortArr("value")}</th>
+                <th className="nowrap" onClick={() => toggleSort("createdAt")} style={{ cursor: "pointer" }}>Date{sortArr("createdAt")}</th>
+                <th style={{ width: 60 }}></th>
               </tr>
             </thead>
             <tbody>
               {visible.map((t) => {
-                const ttl = t.stock ? t.stock.name : t.subject;
                 const created = typeof t.createdAt === "string" ? new Date(t.createdAt) : t.createdAt;
+                const amount = t.quantity * t.price;
                 return (
                   <tr key={t.id}>
                     <td>
@@ -146,13 +173,48 @@ export function TransactionsList({ txns, newSheet }: Props) {
                       </span>
                     </td>
                     <td>
-                      <span style={{ fontWeight: 500 }}>{ttl}</span>{" "}
-                      {!t.stock && <span className="muted" style={{ fontSize: 11 }}>· subject</span>}
+                      {t.stock ? (
+                        <div className="col" style={{ gap: 2 }}>
+                          <span style={{ fontWeight: 500 }}>{t.stock.name}</span>
+                          <span className="muted" style={{ fontSize: 11 }}>Stock</span>
+                        </div>
+                      ) : (
+                        <div className="col" style={{ gap: 2 }}>
+                          <span className="serif" style={{ fontStyle: "italic", fontSize: 14 }}>{t.subject}</span>
+                          <span className="muted" style={{ fontSize: 11 }}>Subject (free-form)</span>
+                        </div>
+                      )}
+                    </td>
+                    <td
+                      className="muted"
+                      style={{ maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                    >
+                      {t.remark || "—"}
                     </td>
                     <td className="right num">{t.quantity}</td>
                     <td className="right num">{money(t.price)}</td>
-                    <td className="right num" style={{ fontWeight: 500 }}>{money(t.quantity * t.price)}</td>
+                    <td
+                      className="right num"
+                      style={{ fontWeight: 500, color: t.type === "IMPORT" ? "var(--pos)" : "var(--neg)" }}
+                    >
+                      {t.type === "IMPORT" ? "+" : "−"}{money(amount)}
+                    </td>
                     <td className="num muted nowrap">{fmtDateTime(created)}</td>
+                    <td className="right">
+                      <div className="row-actions">
+                        <form action={deleteTxn}>
+                          <input type="hidden" name="id" value={t.id} />
+                          <button
+                            type="submit"
+                            className="btn btn--ghost btn--icon btn--sm"
+                            aria-label="Delete"
+                            title="Delete"
+                          >
+                            <i className="fa-regular fa-trash-can" style={{ fontSize: 11 }} />
+                          </button>
+                        </form>
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
