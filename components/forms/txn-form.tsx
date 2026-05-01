@@ -5,6 +5,7 @@ import { Segmented } from "@/components/ui/segmented";
 import { Listbox } from "@/components/ui/listbox";
 import { stockQty } from "@/lib/format";
 import { useClientValidation } from "./use-client-validation";
+import { FormActions } from "./form-actions";
 
 type TxnFormProps = {
   action: (formData: FormData) => Promise<void>;
@@ -43,7 +44,7 @@ export function TxnForm({ action, stocks }: TxnFormProps) {
   }));
 
   return (
-    <form {...formProps} action={action} className="col gap-24" style={{ maxWidth: 720 }}>
+    <form {...formProps} action={action} className="col gap-24">
       <div className="row gap-24">
         <div style={{ flex: 1 }}>
           <div className="field-lbl">Mode <span className="req">*</span></div>
@@ -143,13 +144,11 @@ export function TxnForm({ action, stocks }: TxnFormProps) {
 
       <div>
         <div className="field-lbl">Remark</div>
-        <textarea name="remark" rows={3} className="textarea" {...fieldProps("remark", "Remark")} />
+        <textarea name="remark" rows={3} className="textarea" placeholder="Optional notes" {...fieldProps("remark", "Remark")} />
         {error("remark")}
       </div>
 
-      <div className="row gap-8 mt-8">
-        <button type="submit" className="btn btn--primary">Create transaction</button>
-      </div>
+      <FormActions submitLabel="Create transaction" />
     </form>
   );
 }

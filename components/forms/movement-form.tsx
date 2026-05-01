@@ -5,6 +5,7 @@ import { Segmented } from "@/components/ui/segmented";
 import { Listbox } from "@/components/ui/listbox";
 import { stockQty } from "@/lib/format";
 import { useClientValidation } from "./use-client-validation";
+import { FormActions } from "./form-actions";
 
 type Stock = { id: string; name: string; quantity: number; unit?: string };
 
@@ -37,7 +38,7 @@ export function MovementForm({ action, stocks, presetItems, presetType }: Props)
   const usedIds = new Set(rows.filter(Boolean));
 
   return (
-    <form {...formProps} action={action} className="col gap-24" style={{ maxWidth: 880 }}>
+    <form {...formProps} action={action} className="col gap-24">
       <div>
         <div className="field-lbl">Type <span className="req">*</span></div>
         <Segmented
@@ -121,9 +122,7 @@ export function MovementForm({ action, stocks, presetItems, presetType }: Props)
         {error("remark")}
       </div>
 
-      <div className="row gap-8 mt-8">
-        <button type="submit" className="btn btn--primary">Create movement</button>
-      </div>
+      <FormActions submitLabel="Create movement" />
     </form>
   );
 }

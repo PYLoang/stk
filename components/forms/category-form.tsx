@@ -1,7 +1,7 @@
 "use client";
 
-import { SubmitButton } from "@/components/submit-button";
 import { useClientValidation } from "./use-client-validation";
+import { FormActions } from "./form-actions";
 
 type CategoryFormProps = {
   action: (formData: FormData) => Promise<void>;
@@ -14,7 +14,7 @@ export function CategoryForm({ action, category }: CategoryFormProps) {
   const { formProps, fieldProps, error } = useClientValidation();
 
   return (
-    <form {...formProps} action={action} className="col gap-24" style={{ maxWidth: 480 }}>
+    <form {...formProps} action={action} className="col gap-24">
       <div>
         <div className="field-lbl">Name <span className="req">*</span></div>
         <input
@@ -27,9 +27,7 @@ export function CategoryForm({ action, category }: CategoryFormProps) {
         />
         {error("name")}
       </div>
-      <div>
-        <SubmitButton>{category ? "Save category" : "Create category"}</SubmitButton>
-      </div>
+      <FormActions submitLabel={category ? "Save category" : "Create category"} />
     </form>
   );
 }

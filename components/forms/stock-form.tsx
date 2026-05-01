@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Listbox } from "@/components/ui/listbox";
 import { decimalForDisplay } from "@/lib/format";
 import { useClientValidation } from "./use-client-validation";
+import { FormActions } from "./form-actions";
 
 type StockFormProps = {
   action: (formData: FormData) => Promise<void>;
@@ -25,7 +26,7 @@ export function StockForm({ action, categories, stock }: StockFormProps) {
   const categoryOptions = categories.map((c) => ({ value: c.id, label: c.name }));
 
   return (
-    <form {...formProps} action={action} className="col gap-24" style={{ maxWidth: 640 }}>
+    <form {...formProps} action={action} className="col gap-24">
       <div>
         <div className="field-lbl">Name <span className="req">*</span></div>
         <input
@@ -37,6 +38,23 @@ export function StockForm({ action, categories, stock }: StockFormProps) {
           {...fieldProps("name", "Name")}
         />
         {error("name")}
+      </div>
+
+      <div>
+        <div className="field-lbl">Category <span className="req">*</span></div>
+        <Listbox
+          name="categoryId"
+          value={categoryId}
+          onChange={setCategoryId}
+          options={categoryOptions}
+          placeholder="Select category"
+          required
+          invalid={Boolean(errors.categoryId)}
+          describedBy={errors.categoryId ? "categoryId-error" : undefined}
+          validationKey="categoryId"
+          label="Category"
+        />
+        {error("categoryId")}
       </div>
 
       <div className="row gap-24" style={{ alignItems: "flex-start" }}>
@@ -101,26 +119,7 @@ export function StockForm({ action, categories, stock }: StockFormProps) {
         </div>
       </div>
 
-      <div>
-        <div className="field-lbl">Category <span className="req">*</span></div>
-        <Listbox
-          name="categoryId"
-          value={categoryId}
-          onChange={setCategoryId}
-          options={categoryOptions}
-          placeholder="Select category"
-          required
-          invalid={Boolean(errors.categoryId)}
-          describedBy={errors.categoryId ? "categoryId-error" : undefined}
-          validationKey="categoryId"
-          label="Category"
-        />
-        {error("categoryId")}
-      </div>
-
-      <div className="row gap-8 mt-8">
-        <button type="submit" className="btn btn--primary">{stock ? "Save stock" : "Create stock"}</button>
-      </div>
+      <FormActions submitLabel={stock ? "Save stock" : "Create stock"} />
     </form>
   );
 }

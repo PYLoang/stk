@@ -4,14 +4,17 @@ import { useMemo, useState } from "react";
 import { Sheet } from "./sheet";
 import { CategoryForm } from "./forms/category-form";
 import { deleteCategory, updateCategory } from "@/actions/category";
+import { money } from "@/lib/format";
 
 type Category = {
   id: string;
   name: string;
   stockCount: number;
+  totalValue: number;
+  lowCount: number;
 };
 
-type SortKey = "name" | "stockCount";
+type SortKey = "name" | "stockCount" | "totalValue" | "lowCount";
 
 type Props = {
   categories: Category[];
@@ -31,8 +34,8 @@ export function CategoriesList({ categories, newSheet }: Props) {
     const filtered = categories.filter((c) => !ql || c.name.toLowerCase().includes(ql));
     const dir = sortDir === "asc" ? 1 : -1;
     return [...filtered].sort((a, b) => {
-      const av = sortKey === "name" ? a.name.toLowerCase() : a.stockCount;
-      const bv = sortKey === "name" ? b.name.toLowerCase() : b.stockCount;
+      const av = sortKey === "name" ? a.name.toLowerCase() : a[sortKey];
+      const bv = sortKey === "name" ? b.name.toLowerCase() : b[sortKey];
       if (av < bv) return -1 * dir;
       if (av > bv) return 1 * dir;
       return 0;
@@ -77,7 +80,9 @@ export function CategoriesList({ categories, newSheet }: Props) {
             <thead>
               <tr>
                 <th onClick={() => toggleSort("name")} style={{ cursor: "pointer" }}>Name{sortArr("name")}</th>
-                <th className="right" onClick={() => toggleSort("stockCount")} style={{ cursor: "pointer" }}>Stocks{sortArr("stockCount")}</th>
+                <th className="right" onClick={() => toggleSort("stockCount")} style={{ cursor: "pointer" }}>SKUs{sortArr("stockCount")}</th>
+                <th className="right" onClick={() => toggleSort("totalValue")} style={{ cursor: "pointer" }}>Value{sortArr("totalValue")}</th>
+                <th className="right" onClick={() => toggleSort("lowCount")} style={{ cursor: "pointer" }}>Low{sortArr("lowCount")}</th>
                 <th className="right" style={{ width: 140 }}>Actions</th>
               </tr>
             </thead>
@@ -86,6 +91,13 @@ export function CategoriesList({ categories, newSheet }: Props) {
                 <tr key={c.id}>
                   <td style={{ fontWeight: 500 }}>{c.name}</td>
                   <td className="right num">{c.stockCount}</td>
+                  <td className="right num">{money(c.totalValue)}</td>
+                  <td
+                    className="right num"
+                    style={{ color: c.lowCount ? "var(--warn)" : undefined }}
+                  >
+                    {c.lowCount}
+                  </td>
                   <td className="right">
                     <div className="row-actions">
                       <button

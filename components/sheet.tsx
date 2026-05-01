@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { createContext, useContext, useEffect } from "react";
+
+const SheetContext = createContext<(() => void) | null>(null);
+
+export function useSheetClose() {
+  return useContext(SheetContext);
+}
 
 type SheetProps = {
   open: boolean;
@@ -39,7 +45,9 @@ export function Sheet({ open, onClose, eyebrow, title, children }: SheetProps) {
             <i className="fa-solid fa-xmark" />
           </button>
         </div>
-        <div className="sheet-body">{children}</div>
+        <div className="sheet-body">
+          <SheetContext.Provider value={onClose}>{children}</SheetContext.Provider>
+        </div>
       </aside>
     </>
   );
