@@ -479,6 +479,26 @@ html[data-theme="dark"] .bar-chart .bar-out { fill: oklch(from var(--ink) l c h 
 html[data-density="compact"]  { --row: 36px; --pad: 24px; }
 html[data-density="comfy"]    { --row: 52px; --pad: 40px; }
 
+/* Custom scrollbar — thin, editorial */
+.panel ::-webkit-scrollbar,
+.panel-body ::-webkit-scrollbar { width: 6px; height: 6px; background: transparent; }
+.panel ::-webkit-scrollbar-track,
+.panel-body ::-webkit-scrollbar-track { background: transparent; border: 0; }
+.panel ::-webkit-scrollbar-corner,
+.panel-body ::-webkit-scrollbar-corner { background: transparent; }
+.panel ::-webkit-scrollbar-button,
+.panel-body ::-webkit-scrollbar-button { display: none; height: 0; width: 0; }
+.panel ::-webkit-scrollbar-thumb,
+.panel-body ::-webkit-scrollbar-thumb {
+  background: var(--rule);
+  border-radius: 3px;
+  border: 0;
+}
+.panel ::-webkit-scrollbar-thumb:hover,
+.panel-body ::-webkit-scrollbar-thumb:hover { background: var(--hairline); }
+.panel,
+.panel-body { scrollbar-width: thin; scrollbar-color: var(--rule) transparent; }
+
 /* Utility */
 .row { display: flex; align-items: center; gap: 12px; }
 .col { display: flex; flex-direction: column; gap: 12px; }

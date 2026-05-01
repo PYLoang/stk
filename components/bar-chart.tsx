@@ -47,12 +47,12 @@ export function BarChart({ data, w = 960, h = 260 }: Props) {
   };
 
   return (
-    <div style={{ position: "relative" }}>
+    <div style={{ position: "relative", height: "100%" }}>
       <svg
         className="bar-chart"
         viewBox={`0 0 ${w} ${h}`}
         preserveAspectRatio="none"
-        style={{ width: "100%", height: h, display: "block" }}
+        style={{ width: "100%", height: "100%", display: "block" }}
       >
         {ticks.map((t, i) => (
           <g key={i}>

@@ -1,6 +1,9 @@
 import Link from "next/link";
-import { fmtDateTime, money, num } from "@/lib/format";
+import { money, num } from "@/lib/format";
 import { BarChart } from "@/components/bar-chart";
+import { DashboardMovementsList } from "@/components/dashboard-movements-list";
+import { DashboardTxnsList } from "@/components/dashboard-txns-list";
+import { PAGE_SIZE, type MovementRow, type TxnRow } from "@/app/actions/dashboard-types";
 
 export const FLOW_DAYS = 7;
 
@@ -13,33 +16,71 @@ export async function loadDashboardData() {
   flowStart.setHours(0, 0, 0, 0);
   flowStart.setDate(flowStart.getDate() - (FLOW_DAYS - 1));
 
-  const [stocks, categoryCount, movements, txns, totalUnitsAgg, flowTxns] = await Promise.all([
+  const todayStart = new Date(today);
+  todayStart.setHours(0, 0, 0, 0);
+  const tomorrowStart = new Date(todayStart);
+  tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+
+  const [
+    stocks,
+    categoryCount,
+    initialMovements,
+    initialTxns,
+    totalUnitsAgg,
+    flowTxns,
+    todayImports,
+    todayExports,
+  ] = await Promise.all([
     prisma.stock.findMany({ include: { category: true } }),
     prisma.category.count(),
     prisma.movement.findMany({
-      include: { items: true },
+      include: { items: { select: { id: true } } },
       orderBy: { createdAt: "desc" },
-      take: 5,
+      take: PAGE_SIZE + 1,
     }),
     prisma.txn.findMany({
-      include: { stock: true },
+      include: { stock: { select: { id: true, name: true } } },
       orderBy: { createdAt: "desc" },
-      take: 6,
+      take: PAGE_SIZE + 1,
     }),
     prisma.stock.aggregate({ _sum: { quantity: true } }),
     prisma.txn.findMany({ where: { createdAt: { gte: flowStart } } }),
+    prisma.movement.count({
+      where: { type: "IMPORT", createdAt: { gte: todayStart, lt: tomorrowStart } },
+    }),
+    prisma.movement.count({
+      where: { type: "EXPORT", createdAt: { gte: todayStart, lt: tomorrowStart } },
+    }),
   ]);
 
   const totalValue = stocks.reduce((sum, s) => sum + s.quantity * s.price, 0);
   const totalUnits = totalUnitsAgg._sum.quantity ?? 0;
   const lowItems = stocks.filter((s) => s.quantity <= s.lowAt);
 
-  const isSameDay = (d: Date) =>
-    d.getFullYear() === today.getFullYear() &&
-    d.getMonth() === today.getMonth() &&
-    d.getDate() === today.getDate();
-  const todayImports = movements.filter((m) => m.type === "IMPORT" && isSameDay(m.createdAt)).length;
-  const todayExports = movements.filter((m) => m.type === "EXPORT" && isSameDay(m.createdAt)).length;
+  const movementsHasMore = initialMovements.length > PAGE_SIZE;
+  const movementsPage = movementsHasMore ? initialMovements.slice(0, PAGE_SIZE) : initialMovements;
+  const movementRows: MovementRow[] = movementsPage.map((m) => ({
+    id: m.id,
+    code: m.code,
+    type: m.type,
+    remark: m.remark,
+    createdAt: m.createdAt,
+    itemCount: m.items.length,
+  }));
+  const movementsCursor = movementsHasMore ? movementsPage[movementsPage.length - 1].id : null;
+
+  const txnsHasMore = initialTxns.length > PAGE_SIZE;
+  const txnsPage = txnsHasMore ? initialTxns.slice(0, PAGE_SIZE) : initialTxns;
+  const txnRows: TxnRow[] = txnsPage.map((t) => ({
+    id: t.id,
+    type: t.type,
+    quantity: t.quantity,
+    price: t.price,
+    subject: t.subject,
+    createdAt: t.createdAt,
+    stock: t.stock ? { id: t.stock.id, name: t.stock.name } : null,
+  }));
+  const txnsCursor = txnsHasMore ? txnsPage[txnsPage.length - 1].id : null;
 
   const flowSeries = Array.from({ length: FLOW_DAYS }, (_, i) => {
     const d = new Date(flowStart);
@@ -55,10 +96,7 @@ export async function loadDashboardData() {
   }
 
   return {
-    stocks,
     categoryCount,
-    movements,
-    txns,
     totalValue,
     totalSkus: stocks.length,
     totalUnits,
@@ -66,6 +104,10 @@ export async function loadDashboardData() {
     todayImports,
     todayExports,
     flowSeries,
+    movementRows,
+    movementsCursor,
+    txnRows,
+    txnsCursor,
   };
 }
 
@@ -120,8 +162,16 @@ export function StatStrip({ data }: { data: DashboardData }) {
 export function ChartAndLowStock({ data }: { data: DashboardData }) {
   const { lowItems, flowSeries } = data;
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 24, marginTop: 24 }}>
-      <div className="panel">
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "1.6fr 1fr",
+        gap: 24,
+        marginTop: 24,
+        alignItems: "stretch",
+      }}
+    >
+      <div className="panel" style={{ display: "flex", flexDirection: "column" }}>
         <div className="panel-h">
           <div className="ttl" style={{ fontSize: 16 }}>
             Cash flow · last {FLOW_DAYS} days
@@ -138,7 +188,7 @@ export function ChartAndLowStock({ data }: { data: DashboardData }) {
             </div>
           </div>
         </div>
-        <div className="panel-body">
+        <div className="panel-body" style={{ flex: 1, minHeight: 0 }}>
           <BarChart data={flowSeries} h={260} />
         </div>
       </div>
@@ -151,29 +201,32 @@ export function ChartAndLowStock({ data }: { data: DashboardData }) {
           </span>
         </div>
         <div>
-          {lowItems.slice(0, 7).map((s) => (
-            <div
-              key={s.id}
-              className="row between"
-              style={{ padding: "12px 18px", borderBottom: "1px solid var(--rule-2)" }}
-            >
-              <div className="col" style={{ gap: 2 }}>
-                <span style={{ fontWeight: 500 }}>{s.name}</span>
-                <span className="muted" style={{ fontSize: 11 }}>
-                  {s.category.name}
-                </span>
-              </div>
-              <div className="row gap-8">
-                <span className="mono tnum" style={{ color: "var(--warn)" }}>
-                  {s.quantity} {s.unit}
-                </span>
-                <span className="pill pill--low">low</span>
-              </div>
-            </div>
-          ))}
-          {lowItems.length === 0 && (
+          {lowItems.length === 0 ? (
             <div className="muted" style={{ padding: 24, textAlign: "center", fontSize: 13 }}>
               Everything well stocked.
+            </div>
+          ) : (
+            <div style={{ maxHeight: 5 * 62, overflowY: "auto" }}>
+              {lowItems.map((s) => (
+                <div
+                  key={s.id}
+                  className="row between"
+                  style={{ padding: "12px 18px", borderBottom: "1px solid var(--rule-2)" }}
+                >
+                  <div className="col" style={{ gap: 2 }}>
+                    <span style={{ fontWeight: 500 }}>{s.name}</span>
+                    <span className="muted" style={{ fontSize: 11 }}>
+                      {s.category.name}
+                    </span>
+                  </div>
+                  <div className="row gap-8">
+                    <span className="mono tnum" style={{ color: "var(--warn)" }}>
+                      {s.quantity} {s.unit}
+                    </span>
+                    <span className="pill pill--low">low</span>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -183,7 +236,7 @@ export function ChartAndLowStock({ data }: { data: DashboardData }) {
 }
 
 export function RecentActivity({ data }: { data: DashboardData }) {
-  const { movements, txns } = data;
+  const { movementRows, movementsCursor, txnRows, txnsCursor } = data;
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 24, marginTop: 24 }}>
       <div className="panel">
@@ -193,52 +246,7 @@ export function RecentActivity({ data }: { data: DashboardData }) {
             View all →
           </Link>
         </div>
-        {movements.length === 0 ? (
-          <div className="muted" style={{ padding: 32, textAlign: "center", fontSize: 13 }}>
-            No movements yet.
-          </div>
-        ) : (
-          <table className="tbl">
-            <thead>
-              <tr>
-                <th style={{ width: 30 }}></th>
-                <th>Code</th>
-                <th>Remark</th>
-                <th className="right">Items</th>
-                <th>Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {movements.map((m) => (
-                <tr key={m.id}>
-                  <td>
-                    <i
-                      className={
-                        m.type === "IMPORT"
-                          ? "fa-solid fa-arrow-right-to-bracket"
-                          : "fa-solid fa-arrow-right-from-bracket"
-                      }
-                      style={{
-                        fontSize: 13,
-                        color: m.type === "IMPORT" ? "var(--pos)" : "var(--neg)",
-                      }}
-                      aria-hidden
-                    />
-                  </td>
-                  <td className="num">{m.code}</td>
-                  <td
-                    className="nowrap"
-                    style={{ maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis" }}
-                  >
-                    {m.remark || <span className="faint">—</span>}
-                  </td>
-                  <td className="right num">{m.items.length}</td>
-                  <td className="num muted nowrap">{fmtDateTime(m.createdAt)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+        <DashboardMovementsList initial={movementRows} initialCursor={movementsCursor} />
       </div>
 
       <div className="panel">
@@ -248,53 +256,7 @@ export function RecentActivity({ data }: { data: DashboardData }) {
             View all →
           </Link>
         </div>
-        <div>
-          {txns.length === 0 ? (
-            <div className="muted" style={{ padding: 32, textAlign: "center", fontSize: 13 }}>
-              No transactions yet.
-            </div>
-          ) : (
-            txns.map((t) => {
-              const ttl = t.stock ? t.stock.name : t.subject;
-              return (
-                <div
-                  key={t.id}
-                  className="row between"
-                  style={{ padding: "12px 18px", borderBottom: "1px solid var(--rule-2)" }}
-                >
-                  <div className="row gap-8" style={{ flex: 1, minWidth: 0 }}>
-                    <span className={t.type === "IMPORT" ? "pill pill--in" : "pill pill--out"}>
-                      {t.type === "IMPORT" ? "IN" : "OUT"}
-                    </span>
-                    <div className="col" style={{ gap: 2, flex: 1, minWidth: 0 }}>
-                      <span
-                        style={{
-                          fontWeight: 500,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {ttl}
-                      </span>
-                      <span className="muted" style={{ fontSize: 11 }}>
-                        {t.stock ? "Stock" : "Subject"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="col" style={{ alignItems: "flex-end", gap: 2 }}>
-                    <span className="mono tnum" style={{ fontWeight: 500 }}>
-                      {money(t.quantity * t.price)}
-                    </span>
-                    <span className="muted mono" style={{ fontSize: 11 }}>
-                      {t.quantity} × {money(t.price)}
-                    </span>
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
+        <DashboardTxnsList initial={txnRows} initialCursor={txnsCursor} />
       </div>
     </div>
   );
